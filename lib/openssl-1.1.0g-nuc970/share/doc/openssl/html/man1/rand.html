@@ -1,0 +1,110 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>rand</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#options">OPTIONS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>openssl-rand,
+rand - generate pseudo-random bytes</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p><strong>openssl rand</strong>
+[<strong>-help</strong>]
+[<strong>-out</strong> <em>file</em>]
+[<strong>-rand</strong> <em>file(s)</em>]
+[<strong>-base64</strong>]
+[<strong>-hex</strong>]
+<em>num</em></p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The <strong>rand</strong> command outputs <em>num</em> pseudo-random bytes after seeding
+the random number generator once.  As in other <strong>openssl</strong> command
+line tools, PRNG seeding uses the file <em>$HOME/</em><strong>.rnd</strong> or <strong>.rnd</strong>
+in addition to the files given in the <strong>-rand</strong> option.  A new
+<em>$HOME</em>/<strong>.rnd</strong> or <strong>.rnd</strong> file will be written back if enough
+seeding was obtained from these sources.</p>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="help" class="item"><strong>-help</strong></a></strong></dt>
+
+<dd>
+<p>Print out a usage message.</p>
+</dd>
+<dt><strong><a name="out_file" class="item"><strong>-out</strong> <em>file</em></a></strong></dt>
+
+<dd>
+<p>Write to <em>file</em> instead of standard output.</p>
+</dd>
+<dt><strong><a name="file" class="item"><strong>-rand</strong> <em>file(s)</em></a></strong></dt>
+
+<dd>
+<p>Use specified file or files or EGD socket (see <em>RAND_egd(3)</em>)
+for seeding the random number generator.
+Multiple files can be specified separated by an OS-dependent character.
+The separator is <strong>;</strong> for MS-Windows, <strong>,</strong> for OpenVMS, and <strong>:</strong> for
+all others.</p>
+</dd>
+<dt><strong><a name="base64" class="item"><strong>-base64</strong></a></strong></dt>
+
+<dd>
+<p>Perform base64 encoding on the output.</p>
+</dd>
+<dt><strong><a name="hex" class="item"><strong>-hex</strong></a></strong></dt>
+
+<dd>
+<p>Show the output as a hex string.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><em>RAND_bytes(3)</em></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 2000-2016 The OpenSSL Project Authors. All Rights Reserved.</p>
+<p>Licensed under the OpenSSL license (the &quot;License&quot;).  You may not use
+this file except in compliance with the License.  You can obtain a copy
+in the file LICENSE in the source distribution or at
+<a href="https://www.openssl.org/source/license.html">https://www.openssl.org/source/license.html</a>.</p>
+
+</body>
+
+</html>

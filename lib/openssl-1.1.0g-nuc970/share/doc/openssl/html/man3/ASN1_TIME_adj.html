@@ -1,0 +1,166 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>ASN1_TIME_set</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#notes">NOTES</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#examples">EXAMPLES</a></li>
+	<li><a href="#return_values">RETURN VALUES</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>ASN1_TIME_set, ASN1_TIME_adj, ASN1_TIME_check, ASN1_TIME_set_string,
+ASN1_TIME_print, ASN1_TIME_diff - ASN.1 Time functions</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ ASN1_TIME *ASN1_TIME_set(ASN1_TIME *s, time_t t);
+ ASN1_TIME *ASN1_TIME_adj(ASN1_TIME *s, time_t t,
+                          int offset_day, long offset_sec);
+ int ASN1_TIME_set_string(ASN1_TIME *s, const char *str);
+ int ASN1_TIME_check(const ASN1_TIME *t);
+ int ASN1_TIME_print(BIO *b, const ASN1_TIME *s);</pre>
+<pre>
+ int ASN1_TIME_diff(int *pday, int *psec,
+                    const ASN1_TIME *from, const ASN1_TIME *to);</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The function ASN1_TIME_set() sets the ASN1_TIME structure <strong>s</strong> to the
+time represented by the time_t value <strong>t</strong>. If <strong>s</strong> is NULL a new ASN1_TIME
+structure is allocated and returned.</p>
+<p>ASN1_TIME_adj() sets the ASN1_TIME structure <strong>s</strong> to the time represented
+by the time <strong>offset_day</strong> and <strong>offset_sec</strong> after the time_t value <strong>t</strong>.
+The values of <strong>offset_day</strong> or <strong>offset_sec</strong> can be negative to set a
+time before <strong>t</strong>. The <strong>offset_sec</strong> value can also exceed the number of
+seconds in a day. If <strong>s</strong> is NULL a new ASN1_TIME structure is allocated
+and returned.</p>
+<p>ASN1_TIME_set_string() sets ASN1_TIME structure <strong>s</strong> to the time
+represented by string <strong>str</strong> which must be in appropriate ASN.1 time
+format (for example YYMMDDHHMMSSZ or YYYYMMDDHHMMSSZ).</p>
+<p>ASN1_TIME_check() checks the syntax of ASN1_TIME structure <strong>s</strong>.</p>
+<p>ASN1_TIME_print() prints out the time <strong>s</strong> to BIO <strong>b</strong> in human readable
+format. It will be of the format MMM DD HH:MM:SS YYYY [GMT], for example
+&quot;Feb  3 00:55:52 2015 GMT&quot; it does not include a newline. If the time
+structure has invalid format it prints out &quot;Bad time value&quot; and returns
+an error.</p>
+<p>ASN1_TIME_diff() sets <strong>*pday</strong> and <strong>*psec</strong> to the time difference between
+<strong>from</strong> and <strong>to</strong>. If <strong>to</strong> represents a time later than <strong>from</strong> then
+one or both (depending on the time difference) of <strong>*pday</strong> and <strong>*psec</strong>
+will be positive. If <strong>to</strong> represents a time earlier than <strong>from</strong> then
+one or both of <strong>*pday</strong> and <strong>*psec</strong> will be negative. If <strong>to</strong> and <strong>from</strong>
+represent the same time then <strong>*pday</strong> and <strong>*psec</strong> will both be zero.
+If both <strong>*pday</strong> and <strong>*psec</strong> are non-zero they will always have the same
+sign. The value of <strong>*psec</strong> will always be less than the number of seconds
+in a day. If <strong>from</strong> or <strong>to</strong> is NULL the current time is used.</p>
+<p>
+</p>
+<hr />
+<h1><a name="notes">NOTES</a></h1>
+<p>The ASN1_TIME structure corresponds to the ASN.1 structure <strong>Time</strong>
+defined in <a href="http://www.ietf.org/rfc/rfc5280.txt" class="rfc">RFC5280</a> et al. The time setting functions obey the rules outlined
+in <a href="http://www.ietf.org/rfc/rfc5280.txt" class="rfc">RFC5280</a>: if the date can be represented by UTCTime it is used, else
+GeneralizedTime is used.</p>
+<p>The ASN1_TIME structure is represented as an ASN1_STRING internally and can
+be freed up using ASN1_STRING_free().</p>
+<p>The ASN1_TIME structure can represent years from 0000 to 9999 but no attempt
+is made to correct ancient calendar changes (for example from Julian to
+Gregorian calendars).</p>
+<p>Some applications add offset times directly to a time_t value and pass the
+results to ASN1_TIME_set() (or equivalent). This can cause problems as the
+time_t value can overflow on some systems resulting in unexpected results.
+New applications should use ASN1_TIME_adj() instead and pass the offset value
+in the <strong>offset_sec</strong> and <strong>offset_day</strong> parameters instead of directly
+manipulating a time_t value.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>ASN1_TIME_print() currently does not print out the time zone: it either prints
+out &quot;GMT&quot; or nothing. But all certificates complying with <a href="http://www.ietf.org/rfc/rfc5280.txt" class="rfc">RFC5280</a> et al use GMT
+anyway.</p>
+<p>
+</p>
+<hr />
+<h1><a name="examples">EXAMPLES</a></h1>
+<p>Set a time structure to one hour after the current time and print it out:</p>
+<pre>
+ #include &lt;time.h&gt;
+ #include &lt;openssl/asn1.h&gt;
+ ASN1_TIME *tm;
+ time_t t;
+ BIO *b;
+ t = time(NULL);
+ tm = ASN1_TIME_adj(NULL, t, 0, 60 * 60);
+ b = BIO_new_fp(stdout, BIO_NOCLOSE);
+ ASN1_TIME_print(b, tm);
+ ASN1_STRING_free(tm);
+ BIO_free(b);</pre>
+<p>Determine if one time is later or sooner than the current time:</p>
+<pre>
+ int day, sec;</pre>
+<pre>
+ if (!ASN1_TIME_diff(&amp;day, &amp;sec, NULL, to))
+        /* Invalid time format */</pre>
+<pre>
+ if (day &gt; 0 || sec &gt; 0)
+   printf(&quot;Later\n&quot;);
+ else if (day &lt; 0 || sec &lt; 0)
+   printf(&quot;Sooner\n&quot;);
+ else
+   printf(&quot;Same\n&quot;);</pre>
+<p>
+</p>
+<hr />
+<h1><a name="return_values">RETURN VALUES</a></h1>
+<p>ASN1_TIME_set() and ASN1_TIME_adj() return a pointer to an ASN1_TIME structure
+or NULL if an error occurred.</p>
+<p>ASN1_TIME_set_string() returns 1 if the time value is successfully set and
+0 otherwise.</p>
+<p>ASN1_TIME_check() returns 1 if the structure is syntactically correct and 0
+otherwise.</p>
+<p>ASN1_TIME_print() returns 1 if the time is successfully printed out and 0 if
+an error occurred (I/O error or invalid time format).</p>
+<p>ASN1_TIME_diff() returns 1 for success and 0 for failure. It can fail if the
+pass ASN1_TIME structure has invalid syntax for example.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 2015-2016 The OpenSSL Project Authors. All Rights Reserved.</p>
+<p>Licensed under the OpenSSL license (the &quot;License&quot;).  You may not use
+this file except in compliance with the License.  You can obtain a copy
+in the file LICENSE in the source distribution or at
+<a href="https://www.openssl.org/source/license.html">https://www.openssl.org/source/license.html</a>.</p>
+
+</body>
+
+</html>

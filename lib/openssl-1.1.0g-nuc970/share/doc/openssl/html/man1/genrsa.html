@@ -1,0 +1,165 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>genrsa</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#options">OPTIONS</a></li>
+	<li><a href="#notes">NOTES</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>openssl-genrsa,
+genrsa - generate an RSA private key</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p><strong>openssl</strong> <strong>genrsa</strong>
+[<strong>-help</strong>]
+[<strong>-out filename</strong>]
+[<strong>-passout arg</strong>]
+[<strong>-aes128</strong>]
+[<strong>-aes192</strong>]
+[<strong>-aes256</strong>]
+[<strong>-aria128</strong>]
+[<strong>-aria192</strong>]
+[<strong>-aria256</strong>]
+[<strong>-camellia128</strong>]
+[<strong>-camellia192</strong>]
+[<strong>-camellia256</strong>]
+[<strong>-des</strong>]
+[<strong>-des3</strong>]
+[<strong>-idea</strong>]
+[<strong>-f4</strong>]
+[<strong>-3</strong>]
+[<strong>-rand file(s)</strong>]
+[<strong>-engine id</strong>]
+[<strong>numbits</strong>]</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>The <strong>genrsa</strong> command generates an RSA private key.</p>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="help" class="item"><strong>-help</strong></a></strong></dt>
+
+<dd>
+<p>Print out a usage message.</p>
+</dd>
+<dt><strong><a name="out_filename" class="item"><strong>-out filename</strong></a></strong></dt>
+
+<dd>
+<p>Output the key to the specified file. If this argument is not specified then
+standard output is used.</p>
+</dd>
+<dt><strong><a name="passout_arg" class="item"><strong>-passout arg</strong></a></strong></dt>
+
+<dd>
+<p>the output file password source. For more information about the format of <strong>arg</strong>
+see the <strong>PASS PHRASE ARGUMENTS</strong> section in <em>openssl(1)</em>.</p>
+</dd>
+<dt><strong><a name="aes128_aes192_aes256_aria128_aria192_aria256_camellia128_camellia192_camellia256_des_des3_idea" class="item"><strong>-aes128|-aes192|-aes256|-aria128|-aria192|-aria256|-camellia128|-camellia192|-camellia256|-des|-des3|-idea</strong></a></strong></dt>
+
+<dd>
+<p>These options encrypt the private key with specified
+cipher before outputting it. If none of these options is
+specified no encryption is used. If encryption is used a pass phrase is prompted
+for if it is not supplied via the <strong>-passout</strong> argument.</p>
+</dd>
+<dt><strong><a name="f4_3" class="item"><strong>-F4|-3</strong></a></strong></dt>
+
+<dd>
+<p>the public exponent to use, either 65537 or 3. The default is 65537.</p>
+</dd>
+<dt><strong><a name="file" class="item"><strong>-rand file(s)</strong></a></strong></dt>
+
+<dd>
+<p>a file or files containing random data used to seed the random number
+generator, or an EGD socket (see <em>RAND_egd(3)</em>).
+Multiple files can be specified separated by an OS-dependent character.
+The separator is <strong>;</strong> for MS-Windows, <strong>,</strong> for OpenVMS, and <strong>:</strong> for
+all others.</p>
+</dd>
+<dt><strong><a name="engine_id" class="item"><strong>-engine id</strong></a></strong></dt>
+
+<dd>
+<p>specifying an engine (by its unique <strong>id</strong> string) will cause <strong>genrsa</strong>
+to attempt to obtain a functional reference to the specified engine,
+thus initialising it if needed. The engine will then be set as the default
+for all available algorithms.</p>
+</dd>
+<dt><strong><a name="numbits" class="item"><strong>numbits</strong></a></strong></dt>
+
+<dd>
+<p>the size of the private key to generate in bits. This must be the last option
+specified. The default is 2048.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="notes">NOTES</a></h1>
+<p>RSA private key generation essentially involves the generation of two prime
+numbers. When generating a private key various symbols will be output to
+indicate the progress of the generation. A <strong>.</strong> represents each number which
+has passed an initial sieve test, <strong>+</strong> means a number has passed a single
+round of the Miller-Rabin primality test. A newline means that the number has
+passed all the prime tests (the actual number depends on the key size).</p>
+<p>Because key generation is a random process the time taken to generate a key
+may vary somewhat.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>A quirk of the prime generation algorithm is that it cannot generate small
+primes. Therefore the number of bits should not be less that 64. For typical
+private keys this will not matter because for security reasons they will
+be much larger (typically 1024 bits).</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><em>gendsa(1)</em></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 2000-2017 The OpenSSL Project Authors. All Rights Reserved.</p>
+<p>Licensed under the OpenSSL license (the &quot;License&quot;).  You may not use
+this file except in compliance with the License.  You can obtain a copy
+in the file LICENSE in the source distribution or at
+<a href="https://www.openssl.org/source/license.html">https://www.openssl.org/source/license.html</a>.</p>
+
+</body>
+
+</html>

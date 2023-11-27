@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "*.json": "jsonc",
+        "fram.h": "c",
+        "sqlite3.h": "c",
+        "errno.h": "c",
+        "stdbool.h": "c",
+        "string.h": "c",
+        "unistd.h": "c",
+        "time.h": "c",
+        "http.h": "c",
+        "in.h": "c",
+        "package.h": "c"
+    }
+}

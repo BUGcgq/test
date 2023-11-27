@@ -1,0 +1,158 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>SSL_CIPHER_get_name</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#history">HISTORY</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>SSL_CIPHER_get_cipher_nid, SSL_CIPHER_get_digest_nid, SSL_CIPHER_get_kx_nid,
+SSL_CIPHER_get_auth_nid, SSL_CIPHER_is_aead,
+SSL_CIPHER_get_name, SSL_CIPHER_get_bits,
+SSL_CIPHER_get_version, SSL_CIPHER_description
+- get SSL_CIPHER properties</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ #include &lt;openssl/ssl.h&gt;</pre>
+<pre>
+ const char *SSL_CIPHER_get_name(const SSL_CIPHER *cipher);
+ int SSL_CIPHER_get_bits(const SSL_CIPHER *cipher, int *alg_bits);
+ char *SSL_CIPHER_get_version(const SSL_CIPHER *cipher);
+ char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf, int size);
+ int SSL_CIPHER_get_cipher_nid(const SSL_CIPHER *c);
+ int SSL_CIPHER_get_digest_nid(const SSL_CIPHER *c);
+ int SSL_CIPHER_get_kx_nid(const SSL_CIPHER *c);
+ int SSL_CIPHER_get_auth_nid(const SSL_CIPHER *c);
+ int SSL_CIPHER_is_aead(const SSL_CIPHER *c);</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p><code>SSL_CIPHER_get_name()</code> returns a pointer to the name of <strong>cipher</strong>. If the
+<strong>cipher</strong> is NULL, it returns &quot;(NONE)&quot;.</p>
+<p><code>SSL_CIPHER_get_bits()</code> returns the number of secret bits used for <strong>cipher</strong>.
+If <strong>cipher</strong> is NULL, 0 is returned.</p>
+<p><code>SSL_CIPHER_get_version()</code> returns string which indicates the SSL/TLS protocol
+version that first defined the cipher.  It returns &quot;(NONE)&quot; if <strong>cipher</strong> is NULL.</p>
+<p><code>SSL_CIPHER_get_cipher_nid()</code> returns the cipher NID corresponding to <strong>c</strong>.
+If there is no cipher (e.g. for ciphersuites with no encryption) then
+<strong>NID_undef</strong> is returned.</p>
+<p><code>SSL_CIPHER_get_digest_nid()</code> returns the digest NID corresponding to the MAC
+used by <strong>c</strong>. If there is no digest (e.g. for AEAD ciphersuites) then
+<strong>NID_undef</strong> is returned.</p>
+<p><code>SSL_CIPHER_get_kx_nid()</code> returns the key exchange NID corresponding to the method
+used by <strong>c</strong>. If there is no key exchange, then <strong>NID_undef</strong> is returned. Examples (not comprehensive):</p>
+<pre>
+ NID_kx_rsa
+ NID_kx_ecdhe
+ NID_kx_dhe
+ NID_kx_psk</pre>
+<p><code>SSL_CIPHER_get_auth_nid()</code> returns the authentication NID corresponding to the method
+used by <strong>c</strong>. If there is no authentication, then <strong>NID_undef</strong> is returned.
+Examples (not comprehensive):</p>
+<pre>
+ NID_auth_rsa
+ NID_auth_ecdsa
+ NID_auth_psk</pre>
+<p><code>SSL_CIPHER_is_aead()</code> returns 1 if the cipher <strong>c</strong> is AEAD (e.g. GCM or
+ChaCha20/Poly1305), and 0 if it is not AEAD.</p>
+<p><code>SSL_CIPHER_description()</code> returns a textual description of the cipher used
+into the buffer <strong>buf</strong> of length <strong>len</strong> provided.  If <strong>buf</strong> is provided, it
+must be at least 128 bytes, otherwise a buffer will be allocated using
+<code>OPENSSL_malloc()</code>.  If the provided buffer is too small, or the allocation fails,
+<strong>NULL</strong> is returned.</p>
+<p>The string returned by <code>SSL_CIPHER_description()</code> consists of several fields
+separated by whitespace:</p>
+<dl>
+<dt><strong><a name="ciphername" class="item">&lt;ciphername&gt;</a></strong></dt>
+
+<dd>
+<p>Textual representation of the cipher name.</p>
+</dd>
+<dt><strong><a name="protocol_version" class="item">&lt;protocol version&gt;</a></strong></dt>
+
+<dd>
+<p>Protocol version, such as <strong>TLSv1.2</strong>, when the cipher was first defined.</p>
+</dd>
+<dt><strong><a name="kx_key_exchange" class="item">Kx=&lt;key exchange&gt;</a></strong></dt>
+
+<dd>
+<p>Key exchange method such as <strong>RSA</strong>, <strong>ECDHE</strong>, etc.</p>
+</dd>
+<dt><strong><a name="au_authentication" class="item">Au=&lt;authentication&gt;</a></strong></dt>
+
+<dd>
+<p>Authentication method such as <strong>RSA</strong>, <strong>None</strong>, etc.. None is the
+representation of anonymous ciphers.</p>
+</dd>
+<dt><strong><a name="enc_symmetric_encryption_method" class="item">Enc=&lt;symmetric encryption method&gt;</a></strong></dt>
+
+<dd>
+<p>Encryption method, with number of secret bits, such as <strong>AESGCM(128)</strong>.</p>
+</dd>
+<dt><strong><a name="mac_message_authentication_code" class="item">Mac=&lt;message authentication code&gt;</a></strong></dt>
+
+<dd>
+<p>Message digest, such as <strong>SHA256</strong>.</p>
+</dd>
+</dl>
+<p>Some examples for the output of SSL_CIPHER_description():</p>
+<pre>
+ ECDHE-RSA-AES256-GCM-SHA256 TLSv1.2 Kx=ECDH     Au=RSA  Enc=AESGCM(256) Mac=AEAD
+ RSA-PSK-AES256-CBC-SHA384 TLSv1.0 Kx=RSAPSK   Au=RSA  Enc=AES(256)  Mac=SHA384</pre>
+<p>
+</p>
+<hr />
+<h1><a name="history">HISTORY</a></h1>
+<p><code>SSL_CIPHER_get_version()</code> was updated to always return the correct protocol
+string in OpenSSL 1.1.</p>
+<p><code>SSL_CIPHER_description()</code> was changed to return <strong>NULL</strong> on error,
+rather than a fixed string, in OpenSSL 1.1</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><em>ssl(3)</em>, <em>SSL_get_current_cipher(3)</em>,
+<em>SSL_get_ciphers(3)</em>, <em>ciphers(1)</em></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 2000-2016 The OpenSSL Project Authors. All Rights Reserved.</p>
+<p>Licensed under the OpenSSL license (the &quot;License&quot;).  You may not use
+this file except in compliance with the License.  You can obtain a copy
+in the file LICENSE in the source distribution or at
+<a href="https://www.openssl.org/source/license.html">https://www.openssl.org/source/license.html</a>.</p>
+
+</body>
+
+</html>

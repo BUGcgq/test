@@ -1,0 +1,107 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>speed</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#options">OPTIONS</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>openssl-speed,
+speed - test library performance</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p><strong>openssl speed</strong>
+[<strong>-help</strong>]
+[<strong>-engine id</strong>]
+[<strong>-elapsed</strong>]
+[<strong>-evp algo</strong>]
+[<strong>-decrypt</strong>]
+[<strong>algorithm...</strong>]</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This command is used to test the performance of cryptographic algorithms.
+To see the list of supported algorithms, use the <em>list --digest-commands</em>
+or <em>list --cipher-commands</em> command.</p>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="help" class="item"><strong>-help</strong></a></strong></dt>
+
+<dd>
+<p>Print out a usage message.</p>
+</dd>
+<dt><strong><a name="engine_id" class="item"><strong>-engine id</strong></a></strong></dt>
+
+<dd>
+<p>specifying an engine (by its unique <strong>id</strong> string) will cause <strong>speed</strong>
+to attempt to obtain a functional reference to the specified engine,
+thus initialising it if needed. The engine will then be set as the default
+for all available algorithms.</p>
+</dd>
+<dt><strong><a name="elapsed" class="item"><strong>-elapsed</strong></a></strong></dt>
+
+<dd>
+<p>Measure time in real time instead of CPU time. It can be useful when testing
+speed of hardware engines.</p>
+</dd>
+<dt><strong><a name="evp_algo" class="item"><strong>-evp algo</strong></a></strong></dt>
+
+<dd>
+<p>Use the specified cipher or message digest algorithm via the EVP interface.</p>
+</dd>
+<dt><strong><a name="decrypt" class="item"><strong>-decrypt</strong></a></strong></dt>
+
+<dd>
+<p>Time the decryption instead of encryption. Affects only the EVP testing.</p>
+</dd>
+<dt><strong><a name="zero_or_more_test_algorithms" class="item"><strong>[zero or more test algorithms]</strong></a></strong></dt>
+
+<dd>
+<p>If any options are given, <strong>speed</strong> tests those algorithms, otherwise all of
+the above are tested.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 2000-2016 The OpenSSL Project Authors. All Rights Reserved.</p>
+<p>Licensed under the OpenSSL license (the &quot;License&quot;).  You may not use
+this file except in compliance with the License.  You can obtain a copy
+in the file LICENSE in the source distribution or at
+<a href="https://www.openssl.org/source/license.html">https://www.openssl.org/source/license.html</a>.</p>
+
+</body>
+
+</html>

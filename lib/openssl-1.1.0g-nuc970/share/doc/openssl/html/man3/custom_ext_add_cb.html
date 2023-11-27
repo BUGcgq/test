@@ -1,0 +1,166 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>SSL_extension_supported</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#extension_callbacks">EXTENSION CALLBACKS</a></li>
+	<li><a href="#notes">NOTES</a></li>
+	<li><a href="#return_values">RETURN VALUES</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>SSL_extension_supported,
+SSL_CTX_add_client_custom_ext, SSL_CTX_add_server_custom_ext,
+custom_ext_add_cb, custom_ext_free_cb, custom_ext_parse_cb
+- custom TLS extension handling</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ #include &lt;openssl/ssl.h&gt;</pre>
+<pre>
+ int SSL_CTX_add_client_custom_ext(SSL_CTX *ctx, unsigned int ext_type,
+                                   custom_ext_add_cb add_cb,
+                                   custom_ext_free_cb free_cb, void *add_arg,
+                                   custom_ext_parse_cb parse_cb,
+                                   void *parse_arg);</pre>
+<pre>
+ int SSL_CTX_add_server_custom_ext(SSL_CTX *ctx, unsigned int ext_type,
+                                   custom_ext_add_cb add_cb,
+                                   custom_ext_free_cb free_cb, void *add_arg,
+                                   custom_ext_parse_cb parse_cb,
+                                   void *parse_arg);</pre>
+<pre>
+ int SSL_extension_supported(unsigned int ext_type);</pre>
+<pre>
+ typedef int (*custom_ext_add_cb)(SSL *s, unsigned int ext_type,
+                                  const unsigned char **out,
+                                  size_t *outlen, int *al,
+                                  void *add_arg);</pre>
+<pre>
+ typedef void (*custom_ext_free_cb)(SSL *s, unsigned int ext_type,
+                                    const unsigned char *out,
+                                    void *add_arg);</pre>
+<pre>
+ typedef int (*custom_ext_parse_cb)(SSL *s, unsigned int ext_type,
+                                    const unsigned char *in,
+                                    size_t inlen, int *al,
+                                    void *parse_arg);</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p><code>SSL_CTX_add_client_custom_ext()</code> adds a custom extension for a TLS client
+with extension type <strong>ext_type</strong> and callbacks <strong>add_cb</strong>, <strong>free_cb</strong> and
+<strong>parse_cb</strong>.</p>
+<p><code>SSL_CTX_add_server_custom_ext()</code> adds a custom extension for a TLS server
+with extension type <strong>ext_type</strong> and callbacks <strong>add_cb</strong>, <strong>free_cb</strong> and
+<strong>parse_cb</strong>.</p>
+<p>In both cases the extension type must not be handled by OpenSSL internally
+or an error occurs.</p>
+<p><code>SSL_extension_supported()</code> returns 1 if the extension <strong>ext_type</strong> is handled
+internally by OpenSSL and 0 otherwise.</p>
+<p>
+</p>
+<hr />
+<h1><a name="extension_callbacks">EXTENSION CALLBACKS</a></h1>
+<p>The callback <strong>add_cb</strong> is called to send custom extension data to be
+included in ClientHello for TLS clients or ServerHello for servers. The
+<strong>ext_type</strong> parameter is set to the extension type which will be added and
+<strong>add_arg</strong> to the value set when the extension handler was added.</p>
+<p>If the application wishes to include the extension <strong>ext_type</strong> it should
+set <strong>*out</strong> to the extension data, set <strong>*outlen</strong> to the length of the
+extension data and return 1.</p>
+<p>If the <strong>add_cb</strong> does not wish to include the extension it must return 0.</p>
+<p>If <strong>add_cb</strong> returns -1 a fatal handshake error occurs using the TLS
+alert value specified in <strong>*al</strong>.</p>
+<p>For clients (but not servers) if <strong>add_cb</strong> is set to NULL a zero length
+extension is added for <strong>ext_type</strong>.</p>
+<p>For clients every registered <strong>add_cb</strong> is always called to see if the
+application wishes to add an extension to ClientHello.</p>
+<p>For servers every registered <strong>add_cb</strong> is called once if and only if the
+corresponding extension was received in ClientHello to see if the application
+wishes to add the extension to ServerHello. That is, if no corresponding extension
+was received in ClientHello then <strong>add_cb</strong> will not be called.</p>
+<p>If an extension is added (that is <strong>add_cb</strong> returns 1) <strong>free_cb</strong> is called
+(if it is set) with the value of <strong>out</strong> set by the add callback. It can be
+used to free up any dynamic extension data set by <strong>add_cb</strong>. Since <strong>out</strong> is
+constant (to permit use of constant data in <strong>add_cb</strong>) applications may need to
+cast away const to free the data.</p>
+<p>The callback <strong>parse_cb</strong> receives data for TLS extensions. For TLS clients
+the extension data will come from ServerHello and for TLS servers it will
+come from ClientHello.</p>
+<p>The extension data consists of <strong>inlen</strong> bytes in the buffer <strong>in</strong> for the
+extension <strong>extension_type</strong>.</p>
+<p>If the <strong>parse_cb</strong> considers the extension data acceptable it must return
+1. If it returns 0 or a negative value a fatal handshake error occurs
+using the TLS alert value specified in <strong>*al</strong>.</p>
+<p>The buffer <strong>in</strong> is a temporary internal buffer which will not be valid after
+the callback returns.</p>
+<p>
+</p>
+<hr />
+<h1><a name="notes">NOTES</a></h1>
+<p>The <strong>add_arg</strong> and <strong>parse_arg</strong> parameters can be set to arbitrary values
+which will be passed to the corresponding callbacks. They can, for example,
+be used to store the extension data received in a convenient structure or
+pass the extension data to be added or freed when adding extensions.</p>
+<p>The <strong>ext_type</strong> parameter corresponds to the <strong>extension_type</strong> field of
+<a href="http://www.ietf.org/rfc/rfc5246.txt" class="rfc">RFC5246</a> et al. It is <strong>not</strong> a NID.</p>
+<p>If the same custom extension type is received multiple times a fatal
+<strong>decode_error</strong> alert is sent and the handshake aborts. If a custom extension
+is received in ServerHello which was not sent in ClientHello a fatal
+<strong>unsupported_extension</strong> alert is sent and the handshake is aborted. The
+ServerHello <strong>add_cb</strong> callback is only called if the corresponding extension
+was received in ClientHello. This is compliant with the TLS specifications.
+This behaviour ensures that each callback is called at most once and that
+an application can never send unsolicited extensions.</p>
+<p>
+</p>
+<hr />
+<h1><a name="return_values">RETURN VALUES</a></h1>
+<p><code>SSL_CTX_add_client_custom_ext()</code> and <code>SSL_CTX_add_server_custom_ext()</code> return 1 for
+success and 0 for failure. A failure can occur if an attempt is made to
+add the same <strong>ext_type</strong> more than once, if an attempt is made to use an
+extension type handled internally by OpenSSL or if an internal error occurs
+(for example a memory allocation failure).</p>
+<p><code>SSL_extension_supported()</code> returns 1 if the extension <strong>ext_type</strong> is handled
+internally by OpenSSL and 0 otherwise.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright 2014-2016 The OpenSSL Project Authors. All Rights Reserved.</p>
+<p>Licensed under the OpenSSL license (the &quot;License&quot;).  You may not use
+this file except in compliance with the License.  You can obtain a copy
+in the file LICENSE in the source distribution or at
+<a href="https://www.openssl.org/source/license.html">https://www.openssl.org/source/license.html</a>.</p>
+
+</body>
+
+</html>
