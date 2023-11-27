@@ -186,51 +186,19 @@
 
 // 	return 0;
 // }
-int parseVerInfoEvtSrv(const char *jsondata)
-{
-	if (jsondata == NULL)
-	{
-		return -1;
-	}
 
-	json_object *jsonObj = json_tokener_parse(jsondata);
-	if (jsonObj == NULL)
-	{
-		return -1;
-	}
-	json_object *verInfoEvtObj;
-	if (!json_object_object_get_ex(jsonObj, "verInfoEvt", &verInfoEvtObj))
-	{
-		json_object_put(jsonObj);
-		return -1;
-	}
 
-	// 解析 verInfoEvt 字段内部字段
-	json_object_object_foreach(verInfoEvtObj, key, val)
-	{
-		if (strcmp(key, "devRegMethod") == 0 && json_object_get_type(val) == json_type_int)
-		{
-			printf("devRegMethod = %d\n", json_object_get_int(val));
-		}
-		else if (strcmp(key, "pileHardwareVer") == 0 && json_object_get_type(val) == json_type_string)
-		{
-			printf("pileHardwareVer = %s\n", json_object_get_string(val));
-		}
-	}
-
-	json_object_put(jsonObj);
-	return 0;
-}
 int main()
 {
-	struct funConfUpdate_srv myStruct;
+	struct timeval currentTime;
+	gettimeofday(&currentTime, NULL);
 
-	// 使用 memset 将结构体初始化为全零
-	memset(&myStruct, 0, sizeof(struct funConfUpdate_srv));
+	long long milliseconds = (long long)currentTime.tv_sec * 1000 + currentTime.tv_usec / 1000;
 
-	strcpy(myStruct.confString,"cgq");
 
-	printf("%s\n",createGetFunConfSrvSrvReply("666",&myStruct));
-	return 0;
+	const char *str = createAskClockSynRequest(milliseconds);
+
+	printf("%s\n", str);
+
 	return 0;
 }

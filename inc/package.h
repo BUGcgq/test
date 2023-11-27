@@ -434,13 +434,14 @@ struct acCarConChEvt_req
 //事件上送请求Topic： /sys/{productKey}/{deviceName}/thing/model/up_raw
 //事件上送响应Topic： /sys/{productKey}/{deviceName}/thing/model/up_raw_reply
 //远程升级
+//组包函数返回的是字符串内存，需要调用free释放，不然会内存泄露
 int parseRecvData(const char *jsondata, struct RecvData *recvData);//解析服务器下放的事件，服务，属性数据的包
 const char *createFirmwareVersionPush(const char *id, const char *version, const char *module);//上报固件版本
 int parseFirmwareInfo(const char *jsondata, struct firmwareInfo_rec *data);//推送固件信息
 const char *createFirmwareRatePush(const char *id, const char *step, const char *desc,const char *module);//上报升级进度
 const char *createAskFirmwareInfoRequest(const char *id, const char *module);//设备请求固件信息
 //时钟同步
-const char *createAskClockSynRequest(void);//时钟同步请求
+const char *createAskClockSynRequest(long long milliseconds);//时钟同步请求
 int  parseDevTimeInfo(const char *jsondata, struct devTime_rec *data);//时钟同步响应
 //固件信息上报
 const char *createFirmwareEvtRequest(const char *id,const struct firmwareEvt_req *data);//事件：固件信息上报

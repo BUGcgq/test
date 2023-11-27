@@ -55,7 +55,7 @@ const char *createFirmwareVersionPush(const char *id, const char *version, const
         json_object_object_add(jsonObj, "module", json_object_new_string(module));
     }
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -143,7 +143,7 @@ const char *createFirmwareRatePush(const char *id, const char *step, const char 
         json_object_object_add(jsonObj, "module", json_object_new_string(module));
     }
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -168,30 +168,20 @@ const char *createAskFirmwareInfoRequest(const char *id, const char *module)
     {
         json_object_object_add(jsonObj, "module", json_object_new_string(""));
     }
-    json_object_object_add(jsonObj, "method", json_object_new_string("method"));
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    json_object_object_add(jsonObj, "method", json_object_new_string("thing.ota.firmware.get"));
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createAskClockSynRequest(void)
+const char *createAskClockSynRequest(long long milliseconds)
 {
-    struct timeval currentTime;
-    long milliseconds;
-    if (gettimeofday(&currentTime, NULL) == 0)
-    {
-        milliseconds = currentTime.tv_sec * 1000 + currentTime.tv_usec / 1000;
-    }
-    else
-    {
-        return NULL;
-    }
 
     json_object *jsonObj = json_object_new_object();
     json_object_object_add(jsonObj, "deviceSendTime", json_object_new_int64(milliseconds));
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -282,7 +272,7 @@ const char *createFirmwareEvtRequest(const char *id, const struct firmwareEvt_re
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -313,7 +303,7 @@ const char *createVerInfoEvtRequest(const char *id, const struct verInfoEvt_req 
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -354,7 +344,7 @@ const char *createDevMdunInfoEvtRequest(const char *id, const struct devMduInfoE
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -380,7 +370,7 @@ const char *createAskConfigEvtRequest(const char *id)
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -483,7 +473,7 @@ const char *createConfUpdateSrvReply(const char *id, int code)
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -545,7 +535,7 @@ const char *createGetConfigSrvReply(const char *id, const struct confUpdateSrv_r
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -614,7 +604,7 @@ const char *createFunConfUpdateSrvReply(const char *id, int code)
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -683,7 +673,7 @@ const char *createGetFunConfSrvSrvReply(const char *id, const struct funConfUpda
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -765,7 +755,7 @@ const char *createQueDataSrvReply(const char *id, const struct queDataSrv_rep *d
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -802,7 +792,7 @@ const char *createLogQueryEvtReply(const char *id, const struct logQueryEvt_rep 
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -862,7 +852,7 @@ const char *createDevMaintainSrvReply(const char *id, int ctrlType, int reason)
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -914,7 +904,7 @@ const char *createDevMaintainQuerySrvReply(const char *id, int ctrlType, int rea
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -944,7 +934,7 @@ const char *createAskFeeModelEvtRequest(const char *id, const struct askFeeModel
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1071,7 +1061,7 @@ const char *createFeeModelUpdateSrvReply(const char *id, const struct feeModelUp
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1154,7 +1144,7 @@ const char *createFeeModelQuerySrvReply(const char *id, const struct feeModelQue
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1247,7 +1237,7 @@ const char *createStartChargeSrvReply(const char *id, const struct startChargeSr
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1279,7 +1269,7 @@ const char *createStartChaResEvtReply(const char *id, const struct startChaResEv
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1316,7 +1306,7 @@ const char *createStartChargeAuthEvtRequest(const char *id, const struct startCh
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1461,7 +1451,7 @@ const char *createStopChargeSrvReply(const char *id, const struct stopChargeSrv_
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1493,7 +1483,7 @@ const char *createStopChaResEvtReply(const char *id, const struct stopChaResEvt_
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1549,7 +1539,7 @@ const char *createOrderUpdateEvtRequest(const char *id, const struct orderUpdate
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1613,7 +1603,7 @@ const char *createTotalFaultEvtRequest(const char *id, const struct totalFaultEv
     json_object *totalFaultEvtObj = json_object_new_object();
     json_object *faultValueArray = json_object_new_array();
     json_object *warnValueArray = json_object_new_array();
-    
+
     json_object_object_add(jsonObj, "id", json_object_new_string(id));
     json_object_object_add(jsonObj, "version", json_object_new_string("1.0"));
     json_object_object_add(jsonObj, "method", json_object_new_string("thing.event.totalFaultEvt.post"));
@@ -1638,7 +1628,7 @@ const char *createTotalFaultEvtRequest(const char *id, const struct totalFaultEv
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1680,7 +1670,7 @@ const char *createAcDeRealItyProperty(const char *id, const struct acDeRealIty_i
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1735,7 +1725,7 @@ const char *createAcGunRunItyProperty(const char *id, const struct acGunRunIty_i
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1776,7 +1766,7 @@ const char *createAcGunIdleItyProperty(const char *id, const struct acGunIdleIty
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1813,7 +1803,7 @@ const char *createAcOutMeterItyProperty(const char *id, const struct acOutMeterI
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1907,7 +1897,7 @@ const char *createAcOrderlyChargeSrvReply(const char *id, const struct acOrderly
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1937,7 +1927,7 @@ const char *createAcStChEvtRequest(const char *id, const struct acStChEvt_req *d
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1969,7 +1959,7 @@ const char *createAcCarInfoEvtRequest(const char *id, const struct acCarInfoEvt_
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -2000,7 +1990,7 @@ const char *createAcCarConChEvtRequest(const char *id, const struct acCarConChEv
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY);
+    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
