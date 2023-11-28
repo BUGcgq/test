@@ -17,15 +17,9 @@ extern "C"
 #define FEE_MODE_TIME_NUM              14 //最大时段数
 #define FAULT_WARN_VALUE_NUM           45 //最大故障点数据,告警点数据数目
 #define CHARGE_PLOY_MAX_NUM           10 //最大策略数
-#define MAX_DATA_SIZE 512
-struct RecvData
-{
-    char id[40];
-    char Version[40];
-    char method[40];
-    char params[512];
-};
-struct firmwareInfo_rec 
+
+
+struct firmwareInfo
 {
     char id[24];//消息 ID 号，String 类型的数字，取值范围 0~4294967295，且每个消息 ID在当前充电桩中具有唯一性。
     char message[256];//结果信息。
@@ -39,13 +33,15 @@ struct firmwareInfo_rec
     char module[24];//固件所属的模块名。模块名为 default 时，云端不下发 module 参数。
 
 };
-struct devTime_rec 
+
+struct devTime
 {
     int deviceSendTime;
     int serverRecvTime;
     int serverSendTime;
 };
-struct firmwareEvt_req 
+
+struct firmwareEvt
 {
     char simNo[24];//SIM卡号
     char eleModelId[16];//充电桩当前使用的电费模型编号
@@ -73,7 +69,7 @@ struct firmwareEvt_req
     int isGroundLock;//10:无地锁11:有地锁
 };
 
-struct verInfoEvt_req 
+struct verInfoEvt
 {
     int devRegMethod;// 充电桩注册方式,10:屏幕11:蓝牙12:串口13:NFC14:USB 外设15:固件16:其他
     char pileSoftwareVer[256];//充电桩软件版本号，最长 256 个字符。
@@ -81,7 +77,7 @@ struct verInfoEvt_req
     char sdkVer[256];//使用的 SDK 版本号，最长 256 个字符。
 };
 
-struct devMduInfoEvt_req 
+struct devMduInfoEvt
 {
     char netMduInfo[256];//网络模块型号信息，
     char netMduSoftVer[256];//网络模块软件版本号信息
@@ -91,7 +87,7 @@ struct devMduInfoEvt_req
     char mduInfoString[2][256];
 };
 
-struct confUpdateSrv_rep
+struct confUpdateSrv
 {
     int  equipParamFreq;//充电桩实时监测数据上报频率
     int  gunElecFreq;//充电枪充电中实时监测属性上报频率
@@ -103,13 +99,15 @@ struct confUpdateSrv_rep
     int  doorLock;//门锁监测上送频率
     char qrCode[256];//二维码数据
 };
+
 struct funConfUpdate_srv
 {
     int funCode;
     int confInt;
     char confString[32];
 };
-struct queDataSrv_rep
+
+struct queDataSrv
 {
     int gunNo;//枪号
     char startDate[32];// 查询起始时间
@@ -118,7 +116,7 @@ struct queDataSrv_rep
     char logQueryNo[38];//查询流水号
 };
 
-struct logQueryEvt_rep
+struct logQueryEvt
 {
     int gunNo;//枪号
     char startDate[32];// 查询起始时间
@@ -132,7 +130,7 @@ struct logQueryEvt_rep
     char dataArea[256];//响应数据区
 };
 
-struct askFeeModelEvt_req
+struct askFeeModelEvt
 {
     int gunNo;//充电枪编号
     char eleModelId[16];//当前电费模型编号
@@ -140,7 +138,7 @@ struct askFeeModelEvt_req
 };
 
 
-struct feeModelUpdateSrv_rec
+struct feeModelUpdateSrv
 {
     char eleModelId[16];//当前电费模型编号
     char serModelId[16];//当前服务费模型编号
@@ -151,14 +149,15 @@ struct feeModelUpdateSrv_rec
     int serviceFee[FEE_MODE_TIME_NUM];//电费
 };
 
-struct feeModelUpdateSrv_rep
+struct feeModelUpdateSrvRep
 {
     char eleModelId[16];//当前电费模型编号
     char serModelId[16];//当前服务费模型编号
     int  result;//响应结果
 
 };
-struct feeModelQuerySrv_rep
+
+struct feeModelQuerySrv
 {
     int gunNo;//枪号
     char eleModelId[16];//当前电费模型编号
@@ -170,7 +169,7 @@ struct feeModelQuerySrv_rep
     int serviceFee[FEE_MODE_TIME_NUM];//电费
 };
 
-struct startChargeSrv_rec
+struct startChargeSrv
 {
     int gunNo;//枪号
     char preTradeNo[40];//上级系统交易流水号
@@ -182,14 +181,15 @@ struct startChargeSrv_rec
     int  startMode;//启动模式
     int  insertGunTime;//insertGunTime
 };
-struct startChargeSrv_rep
+
+struct startChargeSrvRep
 {
     int gunNo;//枪号
     char preTradeNo[40];//上级系统交易流水号
     char tradeNo[38];//充电桩交易流水号
 };
 
-struct startChaResEvt_rep
+struct startChaResEvt
 {
     int gunNo;//枪号
     char preTradeNo[40];//上级系统交易流水号
@@ -200,7 +200,7 @@ struct startChaResEvt_rep
 
 };
 
-struct startChargeAuthEvt_req
+struct startChargeAuthEvt
 {
     int gunNo;//枪号
     char preTradeNo[40];//上级系统交易流水号
@@ -213,7 +213,7 @@ struct startChargeAuthEvt_req
     int batteryVol;//当前电池电压
 };
 
-struct authResultSrv_rec
+struct authResultSrv
 {
     int gunNo;//枪号
     char preTradeNo[40];//上级系统交易流水号
@@ -228,7 +228,8 @@ struct authResultSrv_rec
     int insertGunTime;//插枪事件时间戳
 
 };
-struct stopChargeSrv_rec
+
+struct stopChargeSrv
 {
     int gunNo;//枪号
     char preTradeNo[40];//上级系统交易流水号
@@ -236,14 +237,14 @@ struct stopChargeSrv_rec
     int  stopReason;//停止原因
 };
 
-struct stopChargeSrv_rep
+struct stopChargeSrvRep
 {
     int gunNo;//枪号
     char preTradeNo[40];//上级系统交易流水号
     char tradeNo[38];//充电桩交易流水号
 };
 
-struct stopChaResEvt_rep
+struct stopChaResEvt
 {
     int gunNo;//枪号
     char preTradeNo[40];//上级系统交易流水号
@@ -253,7 +254,7 @@ struct stopChaResEvt_rep
     int stopFailReson;//停止失败原因
 };
 
-struct orderUpdateEvt_req
+struct orderUpdateEvt
 {
     int gunNo;//枪号
     char preTradeNo[40];//上级系统交易流水号
@@ -287,7 +288,7 @@ struct orderUpdateEvt_req
     
 };
 
-struct orderCheckSrv_rec
+struct orderCheckSrv
 {
     int gunNo;//枪号
     char preTradeNo[40];//上级系统交易流水号
@@ -296,7 +297,7 @@ struct orderCheckSrv_rec
 
 };
 
-struct totalFaultEvt_req
+struct totalFaultEvt
 {
     int gunNo;//枪号
     int faultSum;//故障总数
@@ -379,7 +380,7 @@ struct acOutMeterIty_ity
     int power;//充电中订单的已充电量
 };
 
-struct acOrderlyChargeSrv_rec
+struct acOrderlyChargeSrv
 {
     char preTradeNo[40];//订单流水号
     char validTime[CHARGE_PLOY_MAX_NUM][40];//策略生效时间
@@ -387,21 +388,21 @@ struct acOrderlyChargeSrv_rec
     int num;//策略段数
 };
 
-struct acOrderlyChargeSrv_rep
+struct acOrderlyChargeSrvRep
 {
     char preTradeNo[40];//订单流水号
     int  result;//返回结果
     int reason;//失败原因
 };
 
-struct acStChEvt_req
+struct acStChEvt
 {
     int  gunNo;//充电枪编号
     char yxOccurTime[40];//发生时刻
     int connCheckStatus;//充电枪连接状态
 };
 
-struct acCarInfoEvt_req
+struct acCarInfoEvt
 {
     int  gunNo;//返回结果
     int  batterySOC;//电池 SOC
@@ -410,7 +411,7 @@ struct acCarInfoEvt_req
     int state;//获取车辆信息状态
 };
 
-struct acCarConChEvt_req
+struct acCarConChEvt
 {
     int  gunNo;//返回结果
     int  cpStatus;//CP 状态
@@ -418,97 +419,93 @@ struct acCarConChEvt_req
     int s3Status;//S3 开关状态
     char yxOccurTime[40];//发生时刻
 };
-//上报固件版本Topic：/ota/device/inform/{YourProductKey}/{YourDeviceName}
-//推送固件信息Topic：/ota/device/upgrade/{YourProductKey}/{YourDeviceName},
-//上报升级进度Topic：/ota/device/progress/{YourProductKey}/{YourDeviceName}
-//请求Topic：/sys/{productKey}/{deviceName}/thing/ota/firmware/get
-//响应Topic：/sys/{productKey}/{deviceName}/thing/ota/firmware/get_reply
-//时钟同步请求Topic： /ext/ntp/${YourProductKey}/${YourDeviceName}/request
-//时钟同步响应Topic： /ext/ntp/${YourProductKey}/${YourDeviceName}/response
-//属性上报请求Topic： /sys/{productKey}/{deviceName}/thing/event/property/post
-//属性上报响应Topic： /sys/{productKey}/{deviceName}/thing/event/property/post_reply
-//属性设置请求Topic：/sys/{productKey}/{deviceName}/thing/service/property/set
-//属性设置响应Topic：/sys/{productKey}/{deviceName}/thing/service/property/set_reply
-//服务调用请求Topic： /sys/{productKey}/{deviceName}/thing/service/{identifier}
-//服务调用响应Topic： /sys/{productKey}/{deviceName}/thing/service/{identifier}_reply
-//事件上送请求Topic： /sys/{productKey}/{deviceName}/thing/model/up_raw
-//事件上送响应Topic： /sys/{productKey}/{deviceName}/thing/model/up_raw_reply
-//远程升级
 //组包函数返回的是字符串内存，需要调用free释放，不然会内存泄露
-int parseRecvData(const char *jsondata, struct RecvData *recvData);//解析服务器下放的事件，服务，属性数据的包
-const char *createFirmwareVersionPush(const char *id, const char *version, const char *module);//上报固件版本
-int parseFirmwareInfo(const char *jsondata, struct firmwareInfo_rec *data);//推送固件信息
-const char *createFirmwareRatePush(const char *id, const char *step, const char *desc,const char *module);//上报升级进度
-const char *createAskFirmwareInfoRequest(const char *id, const char *module);//设备请求固件信息
-//时钟同步
-const char *createAskClockSynRequest(long long milliseconds);//时钟同步请求
-int  parseDevTimeInfo(const char *jsondata, struct devTime_rec *data);//时钟同步响应
-//固件信息上报
-const char *createFirmwareEvtRequest(const char *id,const struct firmwareEvt_req *data);//事件：固件信息上报
-//版本信息上报
-const char *createVerInfoEvtRequest(const char *id,const struct verInfoEvt_req *data);//事件：版本信息上报
-//充电桩组件信息上报
-const char *createDevMdunInfoEvtRequest(const char *id,const struct devMduInfoEvt_req *data);//事件：充电桩组件信息
-//充电桩配置信息管理
-const char *createAskConfigEvtRequest(const char *id);//事件：配置更新请求
-int  parseConfUpdateSrv(const char *jsondata, struct confUpdateSrv_rep *data);//服务：配置更新
-const char *createConfUpdateSrvReply(const char *id,int code);//回复：更新结果
+//6.2 远程升级
+//6.2.2 数据格式
+char *createFirmwareVersionPush(const char *id, const char *version, const char *module);//上报固件版本
+int parseFirmwareInfo(const char *jsondata, struct firmwareInfo*data);//推送固件信息
+char *createFirmwareRatePush(const char *id, const char *step, const char *desc,const char *module);//上报升级进度
+char *createAskFirmwareInfoRequest(const char *id, const char *module);//设备请求固件信息
+//6.3 时钟同步
+char *createAskClockSynRequest(long long milliseconds);//时钟同步请求
+int  parseDevTimeInfo(const char *jsondata, struct devTime*data);//时钟同步响应
+//7.1.2 固件信息上报
+char *createFirmwareEvtRequest(const char *id,const struct firmwareEvt*data);//事件：固件信息上报
+//7.2.2 版本信息上报
+char *createVerInfoEvtRequest(const char *id,const struct verInfoEvt*data);//事件：版本信息上报
+//7.3.2 充电桩组件信息上报
+char *createDevMdunInfoEvtRequest(const char *id,const struct devMduInfoEvt*data);//事件：充电桩组件信息
+//7.4.2 配置更新请求
+char *createAskConfigEvtRequest(const char *id);//事件：配置更新请求
+//7.4.3 配置更新服务
+int  parseConfUpdateSrv(const char *jsondata, struct confUpdateSrv *data);//服务：配置更新
+char *createConfUpdateSrvReply(const char *id,int code);//回复：更新结果
+//7.4.4 查询充电桩配置服务
 int  parseGetConfSrv(const char *jsondata);//服务：配置更新
-const char *createGetConfigSrvReply(const char *id,const struct confUpdateSrv_rep *data);//回复：充电桩配置信息
-//充电桩功能配置管理
+char *createGetConfigSrvReply(const char *id,const struct confUpdateSrv *data);//回复：充电桩配置信息
+//7.5.2 功能配置更新
 int  parseFunConfUpdateSrv(const char *jsondata, struct funConfUpdate_srv *data);//服务：功能配置
-const char *createFunConfUpdateSrvReply(const char *id,int code);//回复：配置结果
+char *createFunConfUpdateSrvReply(const char *id,int code);//回复：配置结果
+//7.5.3 查询充电桩功能配置服务
 int  parseGetFunConfSrv(const char *jsondata);//服务：功能配置查询
-const char *createGetFunConfSrvSrvReply(const char *id, const struct funConfUpdate_srv *data);//回复：查询结果
-//充电桩日志查询
-int  parseQueDataSrv(const char *jsondata, struct queDataSrv_rep * data);//服务：查询设备日志信息
-const char *createQueDataSrvReply(const char *id, const struct queDataSrv_rep *data);//回复：日志信息
-//充电桩日志查询结果上报事件
-const char *createLogQueryEvtReply(const char *id,const struct logQueryEvt_rep *data);//事件：日志查询结果
-//充电桩维护管理
+char *createGetFunConfSrvSrvReply(const char *id, const struct funConfUpdate_srv *data);//回复：查询结果
+//7.6.2 充电桩日志查询
+int  parseQueDataSrv(const char *jsondata, struct queDataSrv * data);//服务：查询设备日志信息
+char *createQueDataSrvReply(const char *id, const struct queDataSrv *data);//回复：日志信息
+//7.6.3 充电桩日志查询结果上报事件
+char *createLogQueryEvtReply(const char *id,const struct logQueryEvt *data);//事件：日志查询结果
+//7.7.2 充电桩维护服务
 int  parseDevMaintainSrv(const char *jsondata);//服务：充电桩维护服务
-const char *createDevMaintainSrvReply(const char *id,int ctrlType,int reason);//回复：设置结果
+char *createDevMaintainSrvReply(const char *id,int ctrlType,int reason);//回复：设置结果
+//7.7.3 充电桩维护状态查询
 int  parseDevMaintainQuerySrv(const char *jsondata);//服务：维护状态查询
-const char *createDevMaintainQuerySrvReply(const char *id,int ctrlType,int reason);//回复：当前状态
-//计量计费模型管理
-const char *createAskFeeModelEvtRequest(const char *id,const struct askFeeModelEvt_req *data);//事件：计费模型请求
-int  parseFeeModelUpdateSrv(const char *jsondata, struct feeModelUpdateSrv_rec *data);//服务：计费模型更新
-const char *createFeeModelUpdateSrvReply(const char *id,const struct feeModelUpdateSrv_rep *data);//回复：更新结果
-//计量计费模查询服务
+char *createDevMaintainQuerySrvReply(const char *id,int ctrlType,int reason);//回复：当前状态
+//8.1.2 计量计费模型请求
+char *createAskFeeModelEvtRequest(const char *id,const struct askFeeModelEvt*data);//事件：计费模型请求
+//8.1.3 计量计费模型更新
+int  parseFeeModelUpdateSrv(const char *jsondata, struct feeModelUpdateSrv*data);//服务：计费模型更新
+char *createFeeModelUpdateSrvReply(const char *id,const struct feeModelUpdateSrvRep *data);//回复：更新结果
+//8.1.4 计量计费模查询服务
 int  parseFeeModelQuerySrv(const char *jsondata);//服务：计费模型查询
-const char *createFeeModelQuerySrvReply(const char *id,const struct feeModelQuerySrv_rep *data);//回复：查询结果
-//上级系统远程发起充电
-int  parseStartChargeSrv(const char *jsondata, struct startChargeSrv_rec *data);//服务：启动充电
-const char *createStartChargeSrvReply(const char *id,const struct startChargeSrv_rep *data);//回复：交易信息
-const char *createStartChaResEvtReply(const char *id, const struct startChaResEvt_rep *data);//事件：充电启动结果
-//充电桩发起充电
-const char *createStartChargeAuthEvtRequest(const char *id,const struct startChargeAuthEvt_req *data);//事件：启动充电鉴权
-int  parseAuthResultSrv(const char *jsondata, struct authResultSrv_rec *data);//服务：鉴权结果
-//上级系统停止充电
-int  parseStopChargeSrv(const char *jsondata, struct stopChargeSrv_rec *data);//服务：停止充电
-const char *createStopChargeSrvReply(const char *id,const struct stopChargeSrv_rep *data);//回复：交易信息
-//停止结果事件
-const char *createStopChaResEvtReply(const char *id, const struct stopChaResEvt_rep *data);//事件：停止充电结果
-//交易记录上传事件
-const char *createOrderUpdateEvtRequest(const char *id,const struct orderUpdateEvt_req *data);//事件：交易记录
-//交易记录确认服务
-int  parseOrderCheckSrv(const char *jsondata, struct orderCheckSrv_rec *data);//服务：交易记录结果
-//充电桩故障告警
-const char *createTotalFaultEvtRequest(const char *id,const struct totalFaultEvt_req *data);//事件 ：故障告警事件
-//数据上报
-const char *createAcDeRealItyProperty(const char *id,const struct acDeRealIty_ity *data);//交流充电桩实时监测数据
-const char *createAcGunRunItyProperty(const char *id,const struct acGunRunIty_ity *data);//交流充电枪充电中实时监测数据
-const char *createAcGunIdleItyProperty(const char *id,const struct acGunIdleIty_ity *data);//交流充电枪非充电中实时监测数据
-const char *createAcOutMeterItyProperty(const char *id,const struct acOutMeterIty_ity *data);//交流输出电表底值监测数据
-//有序充电策略
-int  parseAcOrderlyChargeSrv(const char *jsondata, struct acOrderlyChargeSrv_rec *data);//服务：有序充电
-const char *createAcOrderlyChargeSrvReply(const char *id,const struct acOrderlyChargeSrv_rep *data);//回复：结果
-//交流充电枪状态变更事件
-const char *createAcStChEvtRequest(const char *id,const struct acStChEvt_req *data);//事件：交流充电枪状态变更事件
-//充电前车辆信息上报事件
-const char *createAcCarInfoEvtRequest(const char *id,const struct acCarInfoEvt_req *data);//事件：充电前车辆信息上报事件
-//交流车辆连接状态变化事件
-const char *createAcCarConChEvtRequest(const char *id,const struct acCarConChEvt_req *data);//事件：交流车辆连接状态变化事件
+char *createFeeModelQuerySrvReply(const char *id,const struct feeModelQuerySrv *data);//回复：查询结果
+//8.2.2 启动充电服务
+int  parseStartChargeSrv(const char *jsondata, struct startChargeSrv*data);//服务：启动充电
+char *createStartChargeSrvReply(const char *id,const struct startChargeSrvRep *data);//回复：交易信息
+//8.2.2 启动充电结果事件
+char *createStartChaResEvtReply(const char *id, const struct startChaResEvt *data);//事件：充电启动结果
+//8.3.4 启动充电鉴权结果
+char *createStartChargeAuthEvtRequest(const char *id,const struct startChargeAuthEvt*data);//事件：启动充电鉴权
+//8.3.5 启动充电结果事件
+int  parseAuthResultSrv(const char *jsondata, struct authResultSrv*data);//服务：鉴权结果
+//8.4.2 上级系统停止充电
+int  parseStopChargeSrv(const char *jsondata, struct stopChargeSrv*data);//服务：停止充电
+char *createStopChargeSrvReply(const char *id, const struct startChargeSrvRep *data);//回复：交易信息
+//8.4.3 停止结果事件
+char *createStopChaResEvtReply(const char *id, const struct stopChaResEvt *data);//事件：停止充电结果
+//8.5.2 交易记录上传事件
+char *createOrderUpdateEvtRequest(const char *id,const struct orderUpdateEvt*data);//事件：交易记录
+//8.5.3 交易记录确认服务
+int  parseOrderCheckSrv(const char *jsondata, struct orderCheckSrv*data);//服务：交易记录结果
+//8.6.2 故障告警事件
+char *createTotalFaultEvtRequest(const char *id,const struct totalFaultEvt*data);//事件 ：故障告警事件
+//8.7.2 交流充电桩实时监测数据
+char *createAcDeRealItyProperty(const char *id,const struct acDeRealIty_ity *data);//交流充电桩实时监测数据
+//8.7.3 交流充电枪充电中实时监测数据
+char *createAcGunRunItyProperty(const char *id,const struct acGunRunIty_ity *data);//交流充电枪充电中实时监测数据
+//8.7.4 交流充电枪非充电中实时监测数据
+char *createAcGunIdleItyProperty(const char *id,const struct acGunIdleIty_ity *data);//交流充电枪非充电中实时监测数据
+//8.7.5 交流输出电表底值监测数据
+char *createAcOutMeterItyProperty(const char *id,const struct acOutMeterIty_ity *data);//交流输出电表底值监测数据
+//8.8.2 有序充电策略下发
+int  parseAcOrderlyChargeSrv(const char *jsondata, struct acOrderlyChargeSrv*data);//服务：有序充电
+char *createAcOrderlyChargeSrvReply(const char *id,const struct acOrderlyChargeSrvRep *data);//回复：结果
+//8.9.2 充电枪状态变更事件
+char *createAcStChEvtRequest(const char *id,const struct acStChEvt*data);//事件：交流充电枪状态变更事件
+//8.10.2 充电前车辆信息上报事件
+char *createAcCarInfoEvtRequest(const char *id,const struct acCarInfoEvt*data);//事件：充电前车辆信息上报事件
+//8.11.2 交流车辆连接状态变化事件
+char *createAcCarConChEvtRequest(const char *id,const struct acCarConChEvt*data);//事件：交流车辆连接状态变化事件
+
 #ifdef __cplusplus
 }
 #endif

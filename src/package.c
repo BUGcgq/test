@@ -1,45 +1,6 @@
 #include "package.h"
 
-int parseRecvData(const char *jsondata, struct RecvData *recvData)
-{
-    if (jsondata == NULL || recvData == NULL)
-    {
-        return -1;
-    }
-
-    json_object *jsonObj = json_tokener_parse(jsondata);
-
-    if (jsonObj != NULL)
-    {
-        json_object_object_foreach(jsonObj, key, val)
-        {
-            if (strcmp(key, "id") == 0 && json_object_get_type(val) == json_type_string)
-            {
-                strncpy(recvData->id, json_object_get_string(val), sizeof(recvData->id) - 1);
-            }
-            else if (strcmp(key, "Version") == 0 && json_object_get_type(val) == json_type_string)
-            {
-                strncpy(recvData->Version, json_object_get_string(val), sizeof(recvData->Version) - 1);
-            }
-            else if (strcmp(key, "method") == 0 && json_object_get_type(val) == json_type_string)
-            {
-                strncpy(recvData->method, json_object_get_string(val), sizeof(recvData->method) - 1);
-            }
-            else if (strcmp(key, "params") == 0)
-            {
-                const char *paramsStr = json_object_to_json_string(val);
-                strncpy(recvData->params, paramsStr, sizeof(recvData->params) - 1);
-            }
-        }
-
-        json_object_put(jsonObj);
-        return 0;
-    }
-
-    return -1;
-}
-
-const char *createFirmwareVersionPush(const char *id, const char *version, const char *module)
+char *createFirmwareVersionPush(const char *id, const char *version, const char *module)
 {
     if (id == NULL || version == NULL || module == NULL)
     {
@@ -55,14 +16,14 @@ const char *createFirmwareVersionPush(const char *id, const char *version, const
         json_object_object_add(jsonObj, "module", json_object_new_string(module));
     }
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-int parseFirmwareInfo(const char *jsondata, struct firmwareInfo_rec *data)
+int parseFirmwareInfo(const char *jsondata, struct firmwareInfo *data)
 {
     if (jsondata == NULL || data == NULL)
     {
@@ -122,7 +83,7 @@ int parseFirmwareInfo(const char *jsondata, struct firmwareInfo_rec *data)
     return -1;
 }
 
-const char *createFirmwareRatePush(const char *id, const char *step, const char *desc, const char *module)
+char *createFirmwareRatePush(const char *id, const char *step, const char *desc, const char *module)
 {
     if (id == NULL || step == NULL)
     {
@@ -143,14 +104,14 @@ const char *createFirmwareRatePush(const char *id, const char *step, const char 
         json_object_object_add(jsonObj, "module", json_object_new_string(module));
     }
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createAskFirmwareInfoRequest(const char *id, const char *module)
+char *createAskFirmwareInfoRequest(const char *id, const char *module)
 {
     if (id == NULL)
     {
@@ -169,26 +130,26 @@ const char *createAskFirmwareInfoRequest(const char *id, const char *module)
         json_object_object_add(jsonObj, "module", json_object_new_string(""));
     }
     json_object_object_add(jsonObj, "method", json_object_new_string("thing.ota.firmware.get"));
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createAskClockSynRequest(long long milliseconds)
+char *createAskClockSynRequest(long long milliseconds)
 {
 
     json_object *jsonObj = json_object_new_object();
     json_object_object_add(jsonObj, "deviceSendTime", json_object_new_int64(milliseconds));
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-int parseDevTimeInfo(const char *jsondata, struct devTime_rec *data)
+int parseDevTimeInfo(const char *jsondata, struct devTime *data)
 {
     if (jsondata == NULL || data == NULL)
     {
@@ -221,7 +182,7 @@ int parseDevTimeInfo(const char *jsondata, struct devTime_rec *data)
     return -1;
 }
 
-const char *createFirmwareEvtRequest(const char *id, const struct firmwareEvt_req *data)
+char *createFirmwareEvtRequest(const char *id, const struct firmwareEvt *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -272,14 +233,14 @@ const char *createFirmwareEvtRequest(const char *id, const struct firmwareEvt_re
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createVerInfoEvtRequest(const char *id, const struct verInfoEvt_req *data)
+char *createVerInfoEvtRequest(const char *id, const struct verInfoEvt *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -303,14 +264,14 @@ const char *createVerInfoEvtRequest(const char *id, const struct verInfoEvt_req 
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createDevMdunInfoEvtRequest(const char *id, const struct devMduInfoEvt_req *data)
+char *createDevMdunInfoEvtRequest(const char *id, const struct devMduInfoEvt *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -344,14 +305,14 @@ const char *createDevMdunInfoEvtRequest(const char *id, const struct devMduInfoE
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createAskConfigEvtRequest(const char *id)
+char *createAskConfigEvtRequest(const char *id)
 {
     if (id == NULL)
     {
@@ -370,14 +331,14 @@ const char *createAskConfigEvtRequest(const char *id)
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-int parseConfUpdateSrv(const char *jsondata, struct confUpdateSrv_rep *data)
+int parseConfUpdateSrv(const char *jsondata, struct confUpdateSrv *data)
 {
     if (jsondata == NULL || data == NULL)
     {
@@ -453,7 +414,7 @@ int parseConfUpdateSrv(const char *jsondata, struct confUpdateSrv_rep *data)
     return ret;
 }
 
-const char *createConfUpdateSrvReply(const char *id, int code)
+char *createConfUpdateSrvReply(const char *id, int code)
 {
     if (id == NULL)
     {
@@ -473,7 +434,7 @@ const char *createConfUpdateSrvReply(const char *id, int code)
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -504,7 +465,7 @@ int parseGetConfSrv(const char *jsondata)
     return ret;
 }
 
-const char *createGetConfigSrvReply(const char *id, const struct confUpdateSrv_rep *data)
+char *createGetConfigSrvReply(const char *id, const struct confUpdateSrv *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -535,7 +496,7 @@ const char *createGetConfigSrvReply(const char *id, const struct confUpdateSrv_r
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -583,7 +544,7 @@ int parseFunConfUpdateSrv(const char *jsondata, struct funConfUpdate_srv *data)
     return ret;
 }
 
-const char *createFunConfUpdateSrvReply(const char *id, int code)
+char *createFunConfUpdateSrvReply(const char *id, int code)
 {
     if (id == NULL)
     {
@@ -604,7 +565,7 @@ const char *createFunConfUpdateSrvReply(const char *id, int code)
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -644,7 +605,7 @@ int parseGetFunConfSrv(const char *jsondata)
     return funCode;
 }
 
-const char *createGetFunConfSrvSrvReply(const char *id, const struct funConfUpdate_srv *data)
+char *createGetFunConfSrvSrvReply(const char *id, const struct funConfUpdate_srv *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -673,14 +634,14 @@ const char *createGetFunConfSrvSrvReply(const char *id, const struct funConfUpda
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-int parseQueDataSrv(const char *jsondata, struct queDataSrv_rep *data)
+int parseQueDataSrv(const char *jsondata, struct queDataSrv *data)
 {
     if (jsondata == NULL || data == NULL)
     {
@@ -730,7 +691,7 @@ int parseQueDataSrv(const char *jsondata, struct queDataSrv_rep *data)
     return ret;
 }
 
-const char *createQueDataSrvReply(const char *id, const struct queDataSrv_rep *data)
+char *createQueDataSrvReply(const char *id, const struct queDataSrv *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -755,14 +716,14 @@ const char *createQueDataSrvReply(const char *id, const struct queDataSrv_rep *d
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createLogQueryEvtReply(const char *id, const struct logQueryEvt_rep *data)
+char *createLogQueryEvtReply(const char *id, const struct logQueryEvt *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -792,7 +753,7 @@ const char *createLogQueryEvtReply(const char *id, const struct logQueryEvt_rep 
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -830,7 +791,7 @@ int parseDevMaintainSrv(const char *jsondata)
     return ctrlType;
 }
 
-const char *createDevMaintainSrvReply(const char *id, int ctrlType, int reason)
+char *createDevMaintainSrvReply(const char *id, int ctrlType, int reason)
 {
     if (id == NULL)
     {
@@ -852,7 +813,7 @@ const char *createDevMaintainSrvReply(const char *id, int ctrlType, int reason)
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -882,7 +843,7 @@ int parseDevMaintainQuerySrv(const char *jsondata)
     return ret;
 }
 
-const char *createDevMaintainQuerySrvReply(const char *id, int ctrlType, int reason)
+char *createDevMaintainQuerySrvReply(const char *id, int ctrlType, int reason)
 {
     if (id == NULL)
     {
@@ -904,14 +865,14 @@ const char *createDevMaintainQuerySrvReply(const char *id, int ctrlType, int rea
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createAskFeeModelEvtRequest(const char *id, const struct askFeeModelEvt_req *data)
+char *createAskFeeModelEvtRequest(const char *id, const struct askFeeModelEvt *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -934,14 +895,14 @@ const char *createAskFeeModelEvtRequest(const char *id, const struct askFeeModel
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-int parseFeeModelUpdateSrv(const char *jsondata, struct feeModelUpdateSrv_rec *data)
+int parseFeeModelUpdateSrv(const char *jsondata, struct feeModelUpdateSrv *data)
 {
     if (jsondata == NULL || data == NULL)
     {
@@ -1038,7 +999,7 @@ int parseFeeModelUpdateSrv(const char *jsondata, struct feeModelUpdateSrv_rec *d
     return ret;
 }
 
-const char *createFeeModelUpdateSrvReply(const char *id, const struct feeModelUpdateSrv_rep *data)
+char *createFeeModelUpdateSrvReply(const char *id, const struct feeModelUpdateSrvRep *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1061,7 +1022,7 @@ const char *createFeeModelUpdateSrvReply(const char *id, const struct feeModelUp
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
@@ -1093,7 +1054,7 @@ int parseFeeModelQuerySrv(const char *jsondata)
     return gunNo;
 }
 
-const char *createFeeModelQuerySrvReply(const char *id, const struct feeModelQuerySrv_rep *data)
+char *createFeeModelQuerySrvReply(const char *id, const struct feeModelQuerySrv *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1144,14 +1105,14 @@ const char *createFeeModelQuerySrvReply(const char *id, const struct feeModelQue
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-int parseStartChargeSrv(const char *jsondata, struct startChargeSrv_rec *data)
+int parseStartChargeSrv(const char *jsondata, struct startChargeSrv *data)
 {
     if (jsondata == NULL || data == NULL)
     {
@@ -1215,7 +1176,7 @@ int parseStartChargeSrv(const char *jsondata, struct startChargeSrv_rec *data)
     return ret;
 }
 
-const char *createStartChargeSrvReply(const char *id, const struct startChargeSrv_rep *data)
+char *createStartChargeSrvReply(const char *id, const struct startChargeSrvRep *data)
 {
     if (id == NULL)
     {
@@ -1237,14 +1198,14 @@ const char *createStartChargeSrvReply(const char *id, const struct startChargeSr
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createStartChaResEvtReply(const char *id, const struct startChaResEvt_rep *data)
+char *createStartChaResEvtReply(const char *id, const struct startChaResEvt *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1269,14 +1230,14 @@ const char *createStartChaResEvtReply(const char *id, const struct startChaResEv
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createStartChargeAuthEvtRequest(const char *id, const struct startChargeAuthEvt_req *data)
+char *createStartChargeAuthEvtRequest(const char *id, const struct startChargeAuthEvt *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1306,14 +1267,14 @@ const char *createStartChargeAuthEvtRequest(const char *id, const struct startCh
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-int parseAuthResultSrv(const char *jsondata, struct authResultSrv_rec *data)
+int parseAuthResultSrv(const char *jsondata, struct authResultSrv *data)
 {
     if (jsondata == NULL || data == NULL)
     {
@@ -1385,7 +1346,7 @@ int parseAuthResultSrv(const char *jsondata, struct authResultSrv_rec *data)
     return ret;
 }
 
-int parseStopChargeSrv(const char *jsondata, struct stopChargeSrv_rec *data)
+int parseStopChargeSrv(const char *jsondata, struct stopChargeSrv *data)
 {
     if (jsondata == NULL || data == NULL)
     {
@@ -1429,7 +1390,7 @@ int parseStopChargeSrv(const char *jsondata, struct stopChargeSrv_rec *data)
     return ret;
 }
 
-const char *createStopChargeSrvReply(const char *id, const struct stopChargeSrv_rep *data)
+char *createStopChargeSrvReply(const char *id, const struct startChargeSrvRep *data)
 {
     if (id == NULL)
     {
@@ -1451,14 +1412,14 @@ const char *createStopChargeSrvReply(const char *id, const struct stopChargeSrv_
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createStopChaResEvtReply(const char *id, const struct stopChaResEvt_rep *data)
+char *createStopChaResEvtReply(const char *id, const struct stopChaResEvt *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1483,14 +1444,14 @@ const char *createStopChaResEvtReply(const char *id, const struct stopChaResEvt_
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createOrderUpdateEvtRequest(const char *id, const struct orderUpdateEvt_req *data)
+char *createOrderUpdateEvtRequest(const char *id, const struct orderUpdateEvt *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1539,14 +1500,14 @@ const char *createOrderUpdateEvtRequest(const char *id, const struct orderUpdate
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-int parseOrderCheckSrv(const char *jsondata, struct orderCheckSrv_rec *data)
+int parseOrderCheckSrv(const char *jsondata, struct orderCheckSrv *data)
 {
     if (jsondata == NULL || data == NULL)
     {
@@ -1590,7 +1551,7 @@ int parseOrderCheckSrv(const char *jsondata, struct orderCheckSrv_rec *data)
     return ret;
 }
 
-const char *createTotalFaultEvtRequest(const char *id, const struct totalFaultEvt_req *data)
+char *createTotalFaultEvtRequest(const char *id, const struct totalFaultEvt *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1628,14 +1589,14 @@ const char *createTotalFaultEvtRequest(const char *id, const struct totalFaultEv
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createAcDeRealItyProperty(const char *id, const struct acDeRealIty_ity *data)
+char *createAcDeRealItyProperty(const char *id, const struct acDeRealIty_ity *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1670,14 +1631,14 @@ const char *createAcDeRealItyProperty(const char *id, const struct acDeRealIty_i
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createAcGunRunItyProperty(const char *id, const struct acGunRunIty_ity *data)
+char *createAcGunRunItyProperty(const char *id, const struct acGunRunIty_ity *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1725,14 +1686,14 @@ const char *createAcGunRunItyProperty(const char *id, const struct acGunRunIty_i
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createAcGunIdleItyProperty(const char *id, const struct acGunIdleIty_ity *data)
+char *createAcGunIdleItyProperty(const char *id, const struct acGunIdleIty_ity *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1766,14 +1727,14 @@ const char *createAcGunIdleItyProperty(const char *id, const struct acGunIdleIty
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createAcOutMeterItyProperty(const char *id, const struct acOutMeterIty_ity *data)
+char *createAcOutMeterItyProperty(const char *id, const struct acOutMeterIty_ity *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1803,14 +1764,14 @@ const char *createAcOutMeterItyProperty(const char *id, const struct acOutMeterI
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-int parseAcOrderlyChargeSrv(const char *jsondata, struct acOrderlyChargeSrv_rec *data)
+int parseAcOrderlyChargeSrv(const char *jsondata, struct acOrderlyChargeSrv *data)
 {
     if (jsondata == NULL || data == NULL)
     {
@@ -1875,7 +1836,7 @@ int parseAcOrderlyChargeSrv(const char *jsondata, struct acOrderlyChargeSrv_rec 
     return ret;
 }
 
-const char *createAcOrderlyChargeSrvReply(const char *id, const struct acOrderlyChargeSrv_rep *data)
+char *createAcOrderlyChargeSrvReply(const char *id, const struct acOrderlyChargeSrvRep *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1897,14 +1858,14 @@ const char *createAcOrderlyChargeSrvReply(const char *id, const struct acOrderly
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createAcStChEvtRequest(const char *id, const struct acStChEvt_req *data)
+char *createAcStChEvtRequest(const char *id, const struct acStChEvt *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1927,14 +1888,14 @@ const char *createAcStChEvtRequest(const char *id, const struct acStChEvt_req *d
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createAcCarInfoEvtRequest(const char *id, const struct acCarInfoEvt_req *data)
+char *createAcCarInfoEvtRequest(const char *id, const struct acCarInfoEvt *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1959,14 +1920,14 @@ const char *createAcCarInfoEvtRequest(const char *id, const struct acCarInfoEvt_
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 
     return json_str;
 }
 
-const char *createAcCarConChEvtRequest(const char *id, const struct acCarConChEvt_req *data)
+char *createAcCarConChEvtRequest(const char *id, const struct acCarConChEvt *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1990,7 +1951,7 @@ const char *createAcCarConChEvtRequest(const char *id, const struct acCarConChEv
 
     json_object_object_add(jsonObj, "params", paramsObj);
 
-    const char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
+    char *json_str = strdup(json_object_to_json_string_ext(jsonObj, JSON_C_TO_STRING_PRETTY));
 
     json_object_put(jsonObj);
 

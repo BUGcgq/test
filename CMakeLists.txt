@@ -60,6 +60,8 @@ include_directories(
 set(SRC_SOURCES
     src/main.c
     src/package.c
+    src/mqtt.c
+    src/list.c
 )
 
 
@@ -78,5 +80,5 @@ target_link_libraries(${PROJECT_NAME}
 #   ts
 #  curl
 #    websockets
-#    paho-mqtt3cs
+    paho-mqtt3cs
 )
