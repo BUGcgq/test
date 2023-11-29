@@ -36,9 +36,9 @@ struct firmwareInfo
 
 struct devTime
 {
-    int deviceSendTime;
-    int serverRecvTime;
-    int serverSendTime;
+    long long deviceSendTime;
+    long long serverRecvTime;
+    long long serverSendTime;
 };
 
 struct firmwareEvt
@@ -307,7 +307,7 @@ struct totalFaultEvt
 
 };
 
-struct acDeRealIty_ity
+struct acDeRealIty
 {
     int netType;//网络类型
     int sigVal;//网络信号等级
@@ -323,7 +323,7 @@ struct acDeRealIty_ity
     char serModelId[40];// 服务费模型编号
 };
 
-struct acGunRunIty_ity
+struct acGunRunIty
 {
     int gunNo;//充电枪编号
     int workStatus;//工作状态
@@ -352,7 +352,7 @@ struct acGunRunIty_ity
     int PwmDutyRadio;//PWM 占空比
 };
 
-struct acGunIdleIty_ity
+struct acGunIdleIty
 {
     int gunNo;//充电枪编号
     int workStatus;//工作状态
@@ -368,7 +368,7 @@ struct acGunIdleIty_ity
     int acCurC;//C 相采集电流
 };
 
-struct acOutMeterIty_ity
+struct acOutMeterIty
 {
     int gunNo;//充电枪编号
     char acqTime[40];//采集时间
@@ -471,11 +471,11 @@ char *createFeeModelQuerySrvReply(const char *id,const struct feeModelQuerySrv *
 //8.2.2 启动充电服务
 int  parseStartChargeSrv(const char *jsondata, struct startChargeSrv*data);//服务：启动充电
 char *createStartChargeSrvReply(const char *id,const struct startChargeSrvRep *data);//回复：交易信息
-//8.2.2 启动充电结果事件
+//8.2.3 and 8.3.5 启动充电结果事件
 char *createStartChaResEvtReply(const char *id, const struct startChaResEvt *data);//事件：充电启动结果
-//8.3.4 启动充电鉴权结果
+//8.3.2.2 启动充电鉴权事件
 char *createStartChargeAuthEvtRequest(const char *id,const struct startChargeAuthEvt*data);//事件：启动充电鉴权
-//8.3.5 启动充电结果事件
+//8.3.4 启动充电鉴权结果
 int  parseAuthResultSrv(const char *jsondata, struct authResultSrv*data);//服务：鉴权结果
 //8.4.2 上级系统停止充电
 int  parseStopChargeSrv(const char *jsondata, struct stopChargeSrv*data);//服务：停止充电
@@ -489,13 +489,13 @@ int  parseOrderCheckSrv(const char *jsondata, struct orderCheckSrv*data);//服�
 //8.6.2 故障告警事件
 char *createTotalFaultEvtRequest(const char *id,const struct totalFaultEvt*data);//事件 ：故障告警事件
 //8.7.2 交流充电桩实时监测数据
-char *createAcDeRealItyProperty(const char *id,const struct acDeRealIty_ity *data);//交流充电桩实时监测数据
+char *createAcDeRealItyProperty(const char *id,const struct acDeRealIty *data);//交流充电桩实时监测数据
 //8.7.3 交流充电枪充电中实时监测数据
-char *createAcGunRunItyProperty(const char *id,const struct acGunRunIty_ity *data);//交流充电枪充电中实时监测数据
+char *createAcGunRunItyProperty(const char *id,const struct acGunRunIty *data);//交流充电枪充电中实时监测数据
 //8.7.4 交流充电枪非充电中实时监测数据
-char *createAcGunIdleItyProperty(const char *id,const struct acGunIdleIty_ity *data);//交流充电枪非充电中实时监测数据
+char *createAcGunIdleItyProperty(const char *id,const struct acGunIdleIty *data);//交流充电枪非充电中实时监测数据
 //8.7.5 交流输出电表底值监测数据
-char *createAcOutMeterItyProperty(const char *id,const struct acOutMeterIty_ity *data);//交流输出电表底值监测数据
+char *createAcOutMeterItyProperty(const char *id,const struct acOutMeterIty *data);//交流输出电表底值监测数据
 //8.8.2 有序充电策略下发
 int  parseAcOrderlyChargeSrv(const char *jsondata, struct acOrderlyChargeSrv*data);//服务：有序充电
 char *createAcOrderlyChargeSrvReply(const char *id,const struct acOrderlyChargeSrvRep *data);//回复：结果

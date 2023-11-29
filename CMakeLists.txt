@@ -61,7 +61,7 @@ set(SRC_SOURCES
     src/main.c
     src/package.c
     src/mqtt.c
-    src/list.c
+    src/message.c
 )
 
 

@@ -1596,7 +1596,7 @@ char *createTotalFaultEvtRequest(const char *id, const struct totalFaultEvt *dat
     return json_str;
 }
 
-char *createAcDeRealItyProperty(const char *id, const struct acDeRealIty_ity *data)
+char *createAcDeRealItyProperty(const char *id, const struct acDeRealIty *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1638,7 +1638,7 @@ char *createAcDeRealItyProperty(const char *id, const struct acDeRealIty_ity *da
     return json_str;
 }
 
-char *createAcGunRunItyProperty(const char *id, const struct acGunRunIty_ity *data)
+char *createAcGunRunItyProperty(const char *id, const struct acGunRunIty *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1693,7 +1693,7 @@ char *createAcGunRunItyProperty(const char *id, const struct acGunRunIty_ity *da
     return json_str;
 }
 
-char *createAcGunIdleItyProperty(const char *id, const struct acGunIdleIty_ity *data)
+char *createAcGunIdleItyProperty(const char *id, const struct acGunIdleIty *data)
 {
     if (id == NULL || data == NULL)
     {
@@ -1734,7 +1734,7 @@ char *createAcGunIdleItyProperty(const char *id, const struct acGunIdleIty_ity *
     return json_str;
 }
 
-char *createAcOutMeterItyProperty(const char *id, const struct acOutMeterIty_ity *data)
+char *createAcOutMeterItyProperty(const char *id, const struct acOutMeterIty *data)
 {
     if (id == NULL || data == NULL)
     {
