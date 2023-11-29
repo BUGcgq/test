@@ -41,6 +41,13 @@ struct devTime
     long long serverSendTime;
 };
 
+struct serverRepResult
+{
+    char id[24];//消息 ID 号，String 类型的数字，取值范围 0~4294967295，且每个消息 ID在当前充电桩中具有唯一性。
+    int Code;//状态码。
+    char Data[256];//结果信息。
+};
+
 struct firmwareEvt
 {
     char simNo[24];//SIM卡号

@@ -54,220 +54,96 @@ char *generateUniqueIdStr()
     return result;
 }
 
-int parseRecvData(const char *payload, RecvMessage *data) // 解析服务器下放的事件，服务，属性数据的包
+
+int FirmwareVersionPush(const char *productKey, const char *deviceName, const char *id, const char *version, const char *module)
 {
-    if (payload == NULL || data == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL)
+    {
+        return -1;
+    }
+    char topic[256]; // 适当选择足够容纳字符串的大小
+    snprintf(topic, sizeof(topic), "/ota/device/inform/%s/%s", productKey, deviceName);
+
+    char *send = createFirmwareVersionPush(id, version, module);
+    if (send == NULL)
     {
         return -1;
     }
 
-    json_object *jsonObj = json_tokener_parse(payload);
-    if (jsonObj != NULL)
-    {
-        json_object_object_foreach(jsonObj, key, val)
-        {
-            if (strcmp(key, "id") == 0 && json_object_get_type(val) == json_type_string)
-            {
-                strncpy(data->id, json_object_get_string(val), sizeof(data->id) - 1);
-            }
-            else if (strcmp(key, "version") == 0 && json_object_get_type(val) == json_type_string)
-            {
-                strncpy(data->version, json_object_get_string(val), sizeof(data->version) - 1);
-            }
-            else if (strcmp(key, "method") == 0 && json_object_get_type(val) == json_type_string)
-            {
-                strncpy(data->method, json_object_get_string(val), sizeof(data->method) - 1);
-            }
-            else if (strcmp(key, "params") == 0 && json_object_get_type(val) == json_type_object)
-            {
-                const char *params_str = json_object_to_json_string(val);
-                strncpy(data->params, params_str, sizeof(data->params) - 1);
-            }
-        }
+    enqueueSendMessage(id, topic, send);
+    free(send);
 
-        json_object_put(jsonObj);
-
-        return 0;
-    }
-
-    return -1;
-}
-void processServiceHandle(MQTTClient client, const char *productKey, const char *deviceName, const char *id, const char *method, const char *params) // 处理服务数据的函数
-{
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL || params == NULL || method == NULL)
-    {
-        return;
-    }
-
-    if (strstr("confUpdateSrv", method) == 0)
-    {
-        struct confUpdateSrv confUpdateSrv;
-        if (parseConfUpdateSrv(params, &confUpdateSrv) == 0)
-        {
-            confUpdateSrvReply(client, productKey, deviceName, id);
-        }
-    }
-
-    else if (strstr("getConfSrv", method) == 0)
-    {
-        if (parseGetConfSrv(params) == 0)
-        {
-            getConfSrvReply(client, productKey, deviceName, id);
-        }
-    }
-
-    else if (strstr("funConfUpdateSrv", method) == 0)
-    {
-        struct funConfUpdate_srv funConfUpdate;
-        if (parseFunConfUpdateSrv(params, &funConfUpdate) == 0)
-        {
-            funConfUpdateSrvReply(client, productKey, deviceName, id);
-        }
-    }
-
-    else if (strstr("getFunConfSrv", method) == 0)
-    {
-        if (parseGetFunConfSrv(params) == 0)
-        {
-            getFunConfSrvReply(client, productKey, deviceName, id);
-        }
-    }
-
-    else if (strstr("queDataSrv", method) == 0)
-    {
-        struct queDataSrv queDataSrv;
-        if (parseQueDataSrv(params, &queDataSrv) == 0)
-        {
-            queDataSrvReply(client, productKey, deviceName, id);
-        }
-    }
-
-    else if (strstr("devMaintainSrv", method) == 0)
-    {
-        if (parseDevMaintainSrv(params) == 0)
-        {
-            devMaintainSrvReply(client, productKey, deviceName, id);
-        }
-    }
-
-    else if (strstr("devMaintainQuerySrv", method) == 0)
-    {
-        if (parseDevMaintainQuerySrv(params) == 0)
-        {
-            devMaintainQuerySrvReply(client, productKey, deviceName, id);
-        }
-    }
-
-    else if (strstr("feeModelUpdateSrv", method) == 0)
-    {
-        struct feeModelUpdateSrv feeModelUpdateSrv;
-        if (parseFeeModelUpdateSrv(params, &feeModelUpdateSrv) == 0)
-        {
-            feeModelUpdateSrvReply(client, productKey, deviceName, id);
-        }
-    }
-    else if (strstr("feeModelQuerySrv", method) == 0)
-    {
-        if (parseFeeModelQuerySrv(params) == 0)
-        {
-            feeModelQuerySrvReply(client, productKey, deviceName, id);
-        }
-    }
-
-    else if (strstr("startChargeSrv", method) == 0)
-    {
-        struct startChargeSrv startChargeSrv;
-        if (parseStartChargeSrv(params, &startChargeSrv) == 0)
-        {
-            startChargeSrvReply(client, productKey, deviceName, id);
-        }
-    }
-    else if (strstr("authResultSrv", method) == 0)
-    {
-        struct authResultSrv authResultSrv;
-        if (parseAuthResultSrv(params, &authResultSrv) == 0)
-        {
-            authResultSrvReply(client, productKey, deviceName, id);
-        }
-    }
-    else if (strstr("stopChargeSrv", method) == 0)
-    {
-        struct stopChargeSrv stopChargeSrv;
-        if (parseStopChargeSrv(params, &stopChargeSrv) == 0)
-        {
-            stopChargeSrvReply(client, productKey, deviceName, id);
-        }
-    }
-    else if (strstr("orderCheckSrv", method) == 0)
-    {
-        struct orderCheckSrv orderCheckSrv;
-        if (parseOrderCheckSrv(params, &orderCheckSrv) == 0)
-        {
-            orderCheckSrvReply(client, productKey, deviceName, id);
-        }
-    }
-    else if (strstr("acOrderlyChargeSrv", method) == 0)
-    {
-        struct acOrderlyChargeSrv acOrderlyChargeSrv;
-        if (parseAcOrderlyChargeSrv(params, &acOrderlyChargeSrv) == 0)
-        {
-            orderCheckSrvReply(client, productKey, deviceName, id);
-        }
-    }
+    return 0;
 }
 
-int confUpdateSrvReply(MQTTClient client, const char *productKey, const char *deviceName, const char *id)
+int FirmwareRatePush(const char *productKey, const char *deviceName, const char *id, const char *step, const char *desc, const char *module)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL)
+    {
+        return -1;
+    }
+    char topic[256]; // 适当选择足够容纳字符串的大小
+    snprintf(topic, sizeof(topic), "/ota/device/progress/%s/%s", productKey, deviceName);
+
+    char *send = createFirmwareRatePush(id, step, desc, module);
+    if (send == NULL)
+    {
+        return -1;
+    }
+
+    enqueueSendMessage(id, topic, send);
+    free(send);
+
+    return 0;
+}
+
+int confUpdateSrvReply(const char *productKey, const char *deviceName, const char *id, int code)
+{
+    if (productKey == NULL || deviceName == NULL || id == NULL)
     {
         return -1;
     }
     char topic[256]; // 适当选择足够容纳字符串的大小
     snprintf(topic, sizeof(topic), "/sys/%s/%s/thing/service/confUpdateSrv_reply", productKey, deviceName);
-    int code = 1;
     char *send = createConfUpdateSrvReply(id, code);
     if (send == NULL)
     {
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
-int getConfSrvReply(MQTTClient client, const char *productKey, const char *deviceName, const char *id)
+int getConfSrvReply(const char *productKey, const char *deviceName, const char *id, const struct funConfUpdate_srv *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL)
     {
         return -1;
     }
     char topic[256]; // 适当选择足够容纳字符串的大小
     snprintf(topic, sizeof(topic), "/sys/%s/%s/thing/service/getConfSrv_reply", productKey, deviceName);
 
-    struct funConfUpdate_srv data;
-
-    char *send = createGetFunConfSrvSrvReply(id, &data);
+    char *send = createGetFunConfSrvSrvReply(id, data);
     if (send == NULL)
     {
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
-int funConfUpdateSrvReply(MQTTClient client, const char *productKey, const char *deviceName, const char *id)
+int funConfUpdateSrvReply(const char *productKey, const char *deviceName, const char *id, int code)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL)
     {
         return -1;
     }
     char topic[256]; // 适当选择足够容纳字符串的大小
     snprintf(topic, sizeof(topic), "/sys/%s/%s/thing/service/funConfUpdateSrv_reply", productKey, deviceName);
-
-    int code;
 
     char *send = createFunConfUpdateSrvReply(id, code);
     if (send == NULL)
@@ -275,66 +151,59 @@ int funConfUpdateSrvReply(MQTTClient client, const char *productKey, const char 
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
-int getFunConfSrvReply(MQTTClient client, const char *productKey, const char *deviceName, const char *id)
+int getFunConfSrvReply(const char *productKey, const char *deviceName, const char *id, const struct funConfUpdate_srv *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL)
     {
         return -1;
     }
     char topic[256]; // 适当选择足够容纳字符串的大小
     snprintf(topic, sizeof(topic), "/sys/%s/%s/thing/service/getFunConfSrv_reply", productKey, deviceName);
 
-    struct funConfUpdate_srv data;
-
-    char *send = createGetFunConfSrvSrvReply(id, &data);
+    char *send = createGetFunConfSrvSrvReply(id, data);
     if (send == NULL)
     {
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
-int queDataSrvReply(MQTTClient client, const char *productKey, const char *deviceName, const char *id)
+int queDataSrvReply(const char *productKey, const char *deviceName, const char *id, const struct queDataSrv *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL)
     {
         return -1;
     }
     char topic[256]; // 适当选择足够容纳字符串的大小
     snprintf(topic, sizeof(topic), "/sys/%s/%s/thing/service/queDataSrv_reply", productKey, deviceName);
 
-    struct queDataSrv data;
-
-    char *send = createQueDataSrvReply(id, &data);
+    char *send = createQueDataSrvReply(id, data);
     if (send == NULL)
     {
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
-int devMaintainSrvReply(MQTTClient client, const char *productKey, const char *deviceName, const char *id)
+int devMaintainSrvReply(const char *productKey, const char *deviceName, const char *id, int ctrlType, int reason)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL)
     {
         return -1;
     }
     char topic[256]; // 适当选择足够容纳字符串的大小
     snprintf(topic, sizeof(topic), "/sys/%s/%s/thing/service/devMaintainSrv_reply", productKey, deviceName);
-
-    int ctrlType;
-    int reason;
 
     char *send = createDevMaintainSrvReply(id, ctrlType, reason);
     if (send == NULL)
@@ -342,23 +211,20 @@ int devMaintainSrvReply(MQTTClient client, const char *productKey, const char *d
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int devMaintainQuerySrvReply(MQTTClient client, const char *productKey, const char *deviceName, const char *id)
+int devMaintainQuerySrvReply(const char *productKey, const char *deviceName, const char *id, int ctrlType, int reason)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL)
     {
         return -1;
     }
     char topic[256]; // 适当选择足够容纳字符串的大小
     snprintf(topic, sizeof(topic), "/sys/%s/%s/thing/service/devMaintainQuerySrv_reply", productKey, deviceName);
-
-    int ctrlType;
-    int reason;
 
     char *send = createDevMaintainQuerySrvReply(id, ctrlType, reason);
     if (send == NULL)
@@ -366,174 +232,160 @@ int devMaintainQuerySrvReply(MQTTClient client, const char *productKey, const ch
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
-int feeModelUpdateSrvReply(MQTTClient client, const char *productKey, const char *deviceName, const char *id)
+int feeModelUpdateSrvReply(const char *productKey, const char *deviceName, const char *id, const struct feeModelUpdateSrvRep *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL)
     {
         return -1;
     }
     char topic[256]; // 适当选择足够容纳字符串的大小
     snprintf(topic, sizeof(topic), "/sys/%s/%s/thing/service/feeModelUpdateSrv_reply", productKey, deviceName);
 
-    struct feeModelUpdateSrvRep data;
-
-    char *send = createFeeModelUpdateSrvReply(id, &data);
+    char *send = createFeeModelUpdateSrvReply(id, data);
     if (send == NULL)
     {
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
-int feeModelQuerySrvReply(MQTTClient client, const char *productKey, const char *deviceName, const char *id)
+int feeModelQuerySrvReply(const char *productKey, const char *deviceName, const char *id, const struct feeModelQuerySrv *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL)
     {
         return -1;
     }
     char topic[256]; // 适当选择足够容纳字符串的大小
     snprintf(topic, sizeof(topic), "/sys/%s/%s/thing/service/feeModelQuerySrv_reply", productKey, deviceName);
 
-    struct feeModelQuerySrv data;
-
-    char *send = createFeeModelQuerySrvReply(id, &data);
+    char *send = createFeeModelQuerySrvReply(id, data);
     if (send == NULL)
     {
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int startChargeSrvReply(MQTTClient client, const char *productKey, const char *deviceName, const char *id)
+int startChargeSrvReply(const char *productKey, const char *deviceName, const char *id, const struct startChargeSrvRep *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL)
     {
         return -1;
     }
     char topic[256]; // 适当选择足够容纳字符串的大小
     snprintf(topic, sizeof(topic), "/sys/%s/%s/thing/service/startChargeSrv_reply", productKey, deviceName);
 
-    struct startChargeSrvRep data;
-
-    char *send = createStartChargeSrvReply(id, &data);
+    char *send = createStartChargeSrvReply(id, data);
     if (send == NULL)
     {
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int authResultSrvReply(MQTTClient client, const char *productKey, const char *deviceName, const char *id)
+int authResultSrvReply(const char *productKey, const char *deviceName, const char *id, const struct startChargeAuthEvt *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL)
     {
         return -1;
     }
     char topic[256]; // 适当选择足够容纳字符串的大小
     snprintf(topic, sizeof(topic), "/sys/%s/%s/thing/service/authResultSrv_reply", productKey, deviceName);
 
-    struct startChargeAuthEvt data;
-
-    char *send = createStartChargeAuthEvtRequest(id, &data);
+    char *send = createStartChargeAuthEvtRequest(id, data);
     if (send == NULL)
     {
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int stopChargeSrvReply(MQTTClient client, const char *productKey, const char *deviceName, const char *id)
+int stopChargeSrvReply(const char *productKey, const char *deviceName, const char *id, const struct startChargeSrvRep *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL)
     {
         return -1;
     }
     char topic[256]; // 适当选择足够容纳字符串的大小
     snprintf(topic, sizeof(topic), "/sys/%s/%s/thing/service/stopChargeSrv_reply", productKey, deviceName);
 
-    struct startChargeSrvRep data;
-
-    char *send = createStopChargeSrvReply(id, &data);
+    char *send = createStopChargeSrvReply(id, data);
     if (send == NULL)
     {
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int orderCheckSrvReply(MQTTClient client, const char *productKey, const char *deviceName, const char *id)
+int orderCheckSrvReply(const char *productKey, const char *deviceName, const char *id, const struct orderUpdateEvt *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL)
     {
         return -1;
     }
     char topic[256]; // 适当选择足够容纳字符串的大小
     snprintf(topic, sizeof(topic), "/sys/%s/%s/thing/service/orderCheckSrv_reply", productKey, deviceName);
 
-    struct orderUpdateEvt data;
-
-    char *send = createOrderUpdateEvtRequest(id, &data);
+    char *send = createOrderUpdateEvtRequest(id, data);
     if (send == NULL)
     {
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int acOrderlyChargeSrvReply(MQTTClient client, const char *productKey, const char *deviceName, const char *id)
+int acOrderlyChargeSrvReply(const char *productKey, const char *deviceName, const char *id, const struct acOrderlyChargeSrvRep *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL)
     {
         return -1;
     }
     char topic[256]; // 适当选择足够容纳字符串的大小
     snprintf(topic, sizeof(topic), "/sys/%s/%s/thing/service/acOrderlyChargeSrv_reply", productKey, deviceName);
 
-    struct acOrderlyChargeSrvRep data;
-
-    char *send = createAcOrderlyChargeSrvReply(id, &data);
+    char *send = createAcOrderlyChargeSrvReply(id, data);
     if (send == NULL)
     {
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int AskClockSynRequest(MQTTClient client, const char *productKey, const char *deviceName)
+int AskClockSynRequest(const char *productKey, const char *deviceName, const char *id)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL)
+    if (productKey == NULL || deviceName == NULL)
     {
         return -1;
     }
@@ -551,15 +403,16 @@ int AskClockSynRequest(MQTTClient client, const char *productKey, const char *de
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
+
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int FirmwareEvRequest(MQTTClient client, const char *productKey, const char *deviceName, const char *id, const struct firmwareEvt *data)
+int FirmwareEvRequest(const char *productKey, const char *deviceName, const char *id, const struct firmwareEvt *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
     {
         return -1;
     }
@@ -572,14 +425,14 @@ int FirmwareEvRequest(MQTTClient client, const char *productKey, const char *dev
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
-int VerInfoEvtRequest(MQTTClient client, const char *productKey, const char *deviceName, const char *id, const struct verInfoEvt *data)
+int VerInfoEvtRequest(const char *productKey, const char *deviceName, const char *id, const struct verInfoEvt *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
     {
         return -1;
     }
@@ -592,14 +445,14 @@ int VerInfoEvtRequest(MQTTClient client, const char *productKey, const char *dev
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
-int DevMdunInfoEvtRequest(MQTTClient client, const char *productKey, const char *deviceName, const char *id, const struct devMduInfoEvt *data)
+int DevMdunInfoEvtRequest(const char *productKey, const char *deviceName, const char *id, const struct devMduInfoEvt *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
     {
         return -1;
     }
@@ -612,15 +465,15 @@ int DevMdunInfoEvtRequest(MQTTClient client, const char *productKey, const char 
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int AskConfigEvtRequest(MQTTClient client, const char *productKey, const char *deviceName, const char *id)
+int AskConfigEvtRequest(const char *productKey, const char *deviceName, const char *id)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL)
     {
         return -1;
     }
@@ -633,15 +486,15 @@ int AskConfigEvtRequest(MQTTClient client, const char *productKey, const char *d
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int AskFeeModelEvtRequest(MQTTClient client, const char *productKey, const char *deviceName, const char *id, const struct askFeeModelEvt *data)
+int AskFeeModelEvtRequest(const char *productKey, const char *deviceName, const char *id, const struct askFeeModelEvt *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
     {
         return -1;
     }
@@ -654,15 +507,15 @@ int AskFeeModelEvtRequest(MQTTClient client, const char *productKey, const char 
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int StartChargeAuthEvtRequest(MQTTClient client, const char *productKey, const char *deviceName, const char *id, const struct startChargeAuthEvt *data)
+int StartChargeAuthEvtRequest(const char *productKey, const char *deviceName, const char *id, const struct startChargeAuthEvt *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
     {
         return -1;
     }
@@ -675,15 +528,15 @@ int StartChargeAuthEvtRequest(MQTTClient client, const char *productKey, const c
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int OrderUpdateEvtRequest(MQTTClient client, const char *productKey, const char *deviceName, const char *id, const struct orderUpdateEvt *data)
+int OrderUpdateEvtRequest(const char *productKey, const char *deviceName, const char *id, const struct orderUpdateEvt *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
     {
         return -1;
     }
@@ -696,15 +549,15 @@ int OrderUpdateEvtRequest(MQTTClient client, const char *productKey, const char 
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int TotalFaultEvtRequest(MQTTClient client, const char *productKey, const char *deviceName, const char *id, const struct totalFaultEvt *data)
+int TotalFaultEvtRequest(const char *productKey, const char *deviceName, const char *id, const struct totalFaultEvt *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
     {
         return -1;
     }
@@ -717,15 +570,15 @@ int TotalFaultEvtRequest(MQTTClient client, const char *productKey, const char *
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int AcStChEvtRequest(MQTTClient client, const char *productKey, const char *deviceName, const char *id, const struct acStChEvt *data)
+int AcStChEvtRequest(const char *productKey, const char *deviceName, const char *id, const struct acStChEvt *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
     {
         return -1;
     }
@@ -738,15 +591,15 @@ int AcStChEvtRequest(MQTTClient client, const char *productKey, const char *devi
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int AcCarInfoEvtRequest(MQTTClient client, const char *productKey, const char *deviceName, const char *id, const struct acCarInfoEvt *data)
+int AcCarInfoEvtRequest(const char *productKey, const char *deviceName, const char *id, const struct acCarInfoEvt *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
     {
         return -1;
     }
@@ -759,15 +612,15 @@ int AcCarInfoEvtRequest(MQTTClient client, const char *productKey, const char *d
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int AcCarConChEvtRequest(MQTTClient client, const char *productKey, const char *deviceName, const char *id, const struct acCarConChEvt *data)
+int AcCarConChEvtRequest(const char *productKey, const char *deviceName, const char *id, const struct acCarConChEvt *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
     {
         return -1;
     }
@@ -780,15 +633,15 @@ int AcCarConChEvtRequest(MQTTClient client, const char *productKey, const char *
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int AcDeRealItyProperty(MQTTClient client, const char *productKey, const char *deviceName, const char *id, const struct acDeRealIty *data)
+int AcDeRealItyProperty(const char *productKey, const char *deviceName, const char *id, const struct acDeRealIty *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
     {
         return -1;
     }
@@ -801,15 +654,15 @@ int AcDeRealItyProperty(MQTTClient client, const char *productKey, const char *d
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int AcGunRunItyProperty(MQTTClient client, const char *productKey, const char *deviceName, const char *id, const struct acGunRunIty *data)
+int AcGunRunItyProperty(const char *productKey, const char *deviceName, const char *id, const struct acGunRunIty *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
     {
         return -1;
     }
@@ -822,15 +675,15 @@ int AcGunRunItyProperty(MQTTClient client, const char *productKey, const char *d
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int AcGunIdleItyProperty(MQTTClient client, const char *productKey, const char *deviceName, const char *id, const struct acGunIdleIty *data)
+int AcGunIdleItyProperty(const char *productKey, const char *deviceName, const char *id, const struct acGunIdleIty *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
     {
         return -1;
     }
@@ -843,15 +696,15 @@ int AcGunIdleItyProperty(MQTTClient client, const char *productKey, const char *
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
 
-int AcOutMeterItyProperty(MQTTClient client, const char *productKey, const char *deviceName, const char *id, const struct acOutMeterIty *data)
+int AcOutMeterItyProperty(const char *productKey, const char *deviceName, const char *id, const struct acOutMeterIty *data)
 {
-    if (client == NULL || productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
+    if (productKey == NULL || deviceName == NULL || id == NULL || data == NULL)
     {
         return -1;
     }
@@ -864,8 +717,8 @@ int AcOutMeterItyProperty(MQTTClient client, const char *productKey, const char 
         return -1;
     }
 
-    int ret = publish_message(client, topic, send, 1);
+    enqueueSendMessage(id, topic, send);
     free(send);
 
-    return ret;
+    return 0;
 }
