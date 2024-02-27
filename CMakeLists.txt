@@ -59,10 +59,11 @@ include_directories(
 # 添加 src 源文件
 set(SRC_SOURCES
     src/main.c
-    src/package.c
-    src/mqtt.c
-    src/message.c
-    src/list.c
+    src/log.c
+ #   src/package.c
+ #   src/mqtt.c
+ #   src/message.c
+ #   src/list.c
 )
 
 
@@ -74,12 +75,12 @@ add_executable(${PROJECT_NAME}
 # 链接库
 target_link_libraries(${PROJECT_NAME}
 #    sqlite3
-    json-c
-     ssl
-     crypto
+#    json-c
+#     ssl
+#     crypto
      pthread
 #   ts
 #  curl
 #    websockets
-    paho-mqtt3cs
+#    paho-mqtt3cs
 )
