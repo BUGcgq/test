@@ -16,14 +16,14 @@ extern "C"
 #include <sys/types.h>
 #include <dirent.h>
 #include <pthread.h>
-
-#define SD_CARD_PATH "/mnt/mmcblk0p1"       // SD卡路径
-#define LOG_DIR "log"                       // 日志目录
-#define MAX_SAVE_DAYS 10                    // 最大保存天数
-#define DELETE_LOG_FILES 5                  // 超过保存天数时删除的日志文件数量
-#define MAX_LOG_SIZE (5 * 1024 * 1024)      // 每个日志文件的最大大小，这里设置为5MB
-#define LOG_LEVEL_THRESHOLD LOG_LEVEL_WARNING // 日志记录的最低级别
-
+#include <stdbool.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <stdarg.h>
+#define LOG_BUFFER_SIZE 1024 // 缓冲区大小
 #define ANSI_COLOR_RESET "\x1b[0m"
 #define ANSI_COLOR_RED "\x1b[31m"
 #define ANSI_COLOR_YELLOW "\x1b[33m"
@@ -38,16 +38,31 @@ typedef enum
     LOG_LEVEL_DEBUG
 } LogLevel;
 
-void init_log_system();
+// 定义消息结构体
+struct logmsgbuf
+{
+    long mtype;
+    char mtext[LOG_BUFFER_SIZE];
+};
+
+typedef struct
+{
+    char log_dir[256];        // 日志目录
+    int max_log_size;         // 单个日志文件的最大大小（字节）
+    int max_save_days;        // 最大保存天数
+    int extra_delete;         // 删除旧文件的个数
+    int max_msg_num;          // 最大消息队列数
+    LogLevel log_level;       // 日志级别
+} LogConfig;
+
+void init_log_system(LogConfig *config);
 void close_log_system();
-void log_message(LogLevel level, const char *message, const char *file, const char *func, int line);
+void log_message(LogLevel level, const char *file, const char *func, int line, const char *format, ...);
 
-
-#define LOG_ERROR(message) log_message(LOG_LEVEL_ERROR, message, __FILE__, __func__, __LINE__)
-#define LOG_WARNING(message) log_message(LOG_LEVEL_WARNING, message, __FILE__, __func__, __LINE__)
-#define LOG_INFO(message) log_message(LOG_LEVEL_INFO, message, __FILE__, __func__, __LINE__)
-#define LOG_DEBUG(message) log_message(LOG_LEVEL_DEBUG, message, __FILE__, __func__, __LINE__)
-
+#define LOG_ERROR(message, ...) log_message(LOG_LEVEL_ERROR, __FILE__, __func__, __LINE__, message, ##__VA_ARGS__)
+#define LOG_WARNING(message, ...) log_message(LOG_LEVEL_WARNING, __FILE__, __func__, __LINE__, message, ##__VA_ARGS__)
+#define LOG_INFO(message, ...) log_message(LOG_LEVEL_INFO, __FILE__, __func__, __LINE__, message, ##__VA_ARGS__)
+#define LOG_DEBUG(message, ...) log_message(LOG_LEVEL_DEBUG, __FILE__, __func__, __LINE__, message, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 }

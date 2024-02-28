@@ -59,6 +59,7 @@ include_directories(
 # 添加 src 源文件
 set(SRC_SOURCES
     src/main.c
+ #   src/fsm.c
     src/log.c
  #   src/package.c
  #   src/mqtt.c
