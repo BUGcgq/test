@@ -7,12 +7,22 @@
 #include "list.h"
 
 MQTTClient client = NULL;
-static int connect_state = 0;
-char productKey[64];
-char deviceName[64];
-int g_time_sync_success = 0; // 对时标志位
 
-// 初始化MQTT连接
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-03-11
+ * 函 数 名：connect_mqtt
+ * 描    述: 初始化MQTT连接
+ * 
+ * 参    数: client - [MQTTClient] 
+ * 参    数: config - [配置结构体] 
+ * 返回类型：int
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
+
 int connect_mqtt(MQTTClient *client, MqttConfig *config)
 {
     int rc;
@@ -63,8 +73,23 @@ int connect_mqtt(MQTTClient *client, MqttConfig *config)
 
     return MQTTCLIENT_SUCCESS;
 }
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-03-11
+ * 函 数 名：publish_message
+ * 描    述: 发布消息
+ * 
+ * 参    数: client - [MQTTClient] 
+ * 参    数: topic - [主题] 
+ * 参    数: payload - [信息] 
+ * 参    数: qos - [策略] 
+ * 返回类型：int
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
 
-// 发布消息
 int publish_message(MQTTClient client, const char *topic, const char *payload, int qos)
 {
     MQTTClient_deliveryToken token;
@@ -89,8 +114,21 @@ int publish_message(MQTTClient client, const char *topic, const char *payload, i
 
     return MQTTCLIENT_SUCCESS;
 }
-
-// 订阅主题
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-03-11
+ * 函 数 名：subscribe_topic
+ * 描    述: 订阅主题
+ * 
+ * 参    数: client - [MQTTClient] 
+ * 参    数: topic - [主题] 
+ * 参    数: qos - [策略] 
+ * 返回类型：int
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
 int subscribe_topic(MQTTClient client, char *topic, int qos)
 {
     if (client == NULL)
@@ -108,8 +146,20 @@ int subscribe_topic(MQTTClient client, char *topic, int qos)
 
     return 0;
 }
-
-// 取消订阅主题
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-03-11
+ * 函 数 名：unsubscribe_topic
+ * 描    述: 取消订阅主题
+ * 
+ * 参    数: client - [MQTTClient] 
+ * 参    数: topic - [主题] 
+ * 返回类型：int
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
 int unsubscribe_topic(MQTTClient client, const char *topic)
 {
     if (MQTTClient_unsubscribe(client, topic) != MQTTCLIENT_SUCCESS)
@@ -120,8 +170,18 @@ int unsubscribe_topic(MQTTClient client, const char *topic)
 
     return MQTTCLIENT_SUCCESS;
 }
-
-// 断开 MQTT 连接
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-03-11
+ * 函 数 名：disconnect_mqtt
+ * 描    述: 断开连接
+ * 
+ * 参    数: client - [MQTTClient] 
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
 void disconnect_mqtt(MQTTClient client)
 {
     MQTTClient_disconnect(client, 1000);

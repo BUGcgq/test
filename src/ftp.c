@@ -4,8 +4,23 @@
 #include <stdlib.h>
 #include <time.h>
 #include "ftp.h"
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-03-11
+ * 函 数 名：ftp_download_file
+ * 描    述: 使用ftp下载文件
+ * 
+ * 参    数: url - [远程URL] 
+ * 参    数: local_file_path - [文件下载路径] 
+ * 参    数: mode - [0 - 主动模式，1 - 被动模式] 
+ * 返回类型：int
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
 
-int ocpp_download_file(const char *url, const char *local_file_path, int mode)
+int ftp_download_file(const char *url, const char *local_file_path, int mode)
 {
     if (url == NULL || local_file_path == NULL)
     {
@@ -51,7 +66,22 @@ int ocpp_download_file(const char *url, const char *local_file_path, int mode)
     }
     return 0;
 }
-int ocpp_upload_file(const char *url, const char *local_file_path, int mode)
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-03-11
+ * 函 数 名：ftp_upload_file
+ * 描    述: 使用ftp上传文件
+ * 
+ * 参    数: url - [远程url] 
+ * 参    数: local_file_path - [本地文件路径] 
+ * 参    数: mode - [0 - 主动模式，1 - 被动模式]  
+ * 返回类型：int
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
+int ftp_upload_file(const char *url, const char *local_file_path, int mode)
 {
     if (url == NULL || local_file_path == NULL)
     {

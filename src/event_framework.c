@@ -50,6 +50,17 @@ static void *event_consumer(void *arg)
     return NULL;
 }
 
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-03-11
+ * 函 数 名：init_event_framework
+ * 描    述: 初始化事件管理系统
+ * 
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
 void init_event_framework()
 {
     subscriber_list.head = NULL;
@@ -75,7 +86,17 @@ void init_event_framework()
     pthread_mutex_init(&threadPool.lock, NULL);
     pthread_cond_init(&threadPool.cond, NULL);
 }
-
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-03-11
+ * 函 数 名：cleanup_event_framework
+ * 描    述: 反初始化事件管理系统
+ * 
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
 void cleanup_event_framework()
 {
     pthread_mutex_lock(&subscriber_list.lock);
@@ -111,7 +132,20 @@ void cleanup_event_framework()
     pthread_mutex_destroy(&threadPool.lock);
     pthread_cond_destroy(&threadPool.cond);
 }
-
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-03-11
+ * 函 数 名：subscribe_event_topic
+ * 描    述: 订阅事件主题
+ * 
+ * 参    数: eventType - [事件类型] 
+ * 参    数: callback - [事件回调] 
+ * 返回类型：int 成功返回事件者id，失败返回-1
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
 int subscribe_event_topic(int eventType, void (*callback)(void *))
 {
     pthread_mutex_lock(&subscriber_list.lock);
@@ -135,7 +169,18 @@ int subscribe_event_topic(int eventType, void (*callback)(void *))
 
     return newSub->id;
 }
-
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-03-11
+ * 函 数 名：unsubscribe_event_topic
+ * 描    述: 根据事件者id取消订阅
+ * 
+ * 参    数: subscriberId - [事件者id] 
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
 void unsubscribe_event_topic(int subscriberId)
 {
     pthread_mutex_lock(&subscriber_list.lock);
@@ -164,7 +209,20 @@ void unsubscribe_event_topic(int subscriberId)
 
     pthread_mutex_unlock(&subscriber_list.lock);
 }
-
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-03-11
+ * 函 数 名：publish_event_message
+ * 描    述: 推送事件
+ * 
+ * 参    数: eventType - [事件类型] 
+ * 参    数: data - [数据] 
+ * 参    数: dataSize - [长度] 
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
 void publish_event_message(int eventType, void *data, size_t dataSize)
 {
     pthread_mutex_lock(&subscriber_list.lock);
