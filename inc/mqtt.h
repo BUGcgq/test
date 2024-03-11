@@ -49,7 +49,6 @@ int subscribe_topic(MQTTClient client, char *topic, int qos);
 int unsubscribe_topic(MQTTClient client, const char *topic);
 int publish_message(MQTTClient client, const char *topic, const char *payload, int qos);
 void disconnect_mqtt(MQTTClient client);
-int init_topic(MQTTClient client, const char *productKey, const char *deviceName);
 int mqtt_comm_init();
 
 #ifdef __cplusplus

@@ -672,3 +672,33 @@ void close_log_system()
         current_log_fd = -1;
     }
 }
+
+// int main()
+// {
+// 	LogConfig config;
+// 	memcpy(config.log_dir, "/mnt/mmcblk0p1/log", sizeof(config.log_dir));
+// 	memcpy(config.zero_dir, "/mnt/mmcblk0p1/can", sizeof(config.zero_dir));
+// 	config.max_log_size = 3 * 1024 * 1024, // 3MB
+// 	config.max_save_days = 10,		   // 最大保存天数
+// 	config.extra_delete = 5,		   // 超天数删除最老的5条
+// 	config.max_msg_num = 20,		   // 消息队列最大写入条数
+// 	config.write_msg_interval = 10;     //写缓冲区时间
+// 	config.log_level = LOG_LEVEL_INFO; // 设置为需要的日志级别
+
+// 	// 写入日志
+// 	init_log_system(&config);
+// 	// while (1)
+// 	// {
+// 	// 	LOG_INFO("LOG_INFO");
+// 	// 	sleep(10);
+// 	// }
+
+// 	// 关闭日志系统
+
+// 	if(ocpp_download_file("ftp://inc02:za%40g0Pg6J@14.29.244.45:21/inc/kltt/KE-6720-M.bin.tar.bz2","/app/core/KE-6720-M.bin.tar.bz2",1) == 0)
+// 	LOG_INFO("下载成功");
+// 	else
+// 	LOG_INFO("下载失败");
+// 	close_log_system();
+// 	return 0;
+// }

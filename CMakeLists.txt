@@ -21,23 +21,15 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 
 # 设置库文件路径
-set(sqlite3_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/sqlite-3.33-nuc970)
-set(json-c_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/json-c-0.9-nuc970)
 set(openssl_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/openssl-1.1.0g-nuc970)
-set(ts_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/tslib-1.4-nuc970)
-set(websocket_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libwebsockets)
 set(CURL_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libcurl)
 set(MQTT_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libpaho-mqtt3)
 set(EVENT_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libevent)
 
 # 添加链接库搜索路径
 link_directories(
-    ${sqlite3_LIBRARY_DIRS}/lib
-    ${ts_LIBRARY_DIRS}/lib
-    ${json-c_LIBRARY_DIRS}/lib
     ${openssl_LIBRARY_DIRS}/lib
     ${CURL_LIBRARY_DIRS}/lib
-    ${websocket_LIBRARY_DIRS}/lib
     ${MQTT_LIBRARY_DIRS}/lib
     ${EVENT_LIBRARY_DIRS}/lib
 )
@@ -46,12 +38,8 @@ link_directories(
 include_directories(
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/inc
-    ${ts_LIBRARY_DIRS}/include
-    ${sqlite3_LIBRARY_DIRS}/include
-    ${json-c_LIBRARY_DIRS}/include
     ${openssl_LIBRARY_DIRS}/include
     ${CURL_LIBRARY_DIRS}/include
-    ${websocket_LIBRARY_DIRS}/include
     ${MQTT_LIBRARY_DIRS}/include
     ${EVENT_LIBRARY_DIRS}/include
 )
@@ -61,15 +49,12 @@ include_directories(
 # 添加 src 源文件
 set(SRC_SOURCES
     src/main.c
- #   src/fsm.c
- #   src/log.c
-  #   src/event_framework.c
-  #  src/ftp.c
-     src/base64.c
- #   src/package.c
- #   src/mqtt.c
- #   src/message.c
- #   src/list.c
+#   src/log.c
+#   src/event_framework.c
+#  src/ftp.c
+    src/base64.c
+#   src/mqtt.c
+#   src/list.c
 )
 
 
@@ -80,15 +65,10 @@ add_executable(${PROJECT_NAME}
 
 # 链接库
 target_link_libraries(${PROJECT_NAME}
-#    sqlite3
-#    json-c
     ssl
-   crypto
-     pthread
- #  ts
-  z
-#   event
-  curl
-#    websockets
-#    paho-mqtt3cs
+    crypto
+    pthread
+    z
+    curl
+#   paho-mqtt3cs
 )
