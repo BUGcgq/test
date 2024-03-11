@@ -28,7 +28,7 @@ set(ts_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/tslib-1.4-nuc970)
 set(websocket_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libwebsockets)
 set(CURL_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libcurl)
 set(MQTT_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libpaho-mqtt3)
-
+set(EVENT_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libevent)
 
 # 添加链接库搜索路径
 link_directories(
@@ -39,6 +39,7 @@ link_directories(
     ${CURL_LIBRARY_DIRS}/lib
     ${websocket_LIBRARY_DIRS}/lib
     ${MQTT_LIBRARY_DIRS}/lib
+    ${EVENT_LIBRARY_DIRS}/lib
 )
 
 # 添加头文件搜索路径
@@ -52,6 +53,7 @@ include_directories(
     ${CURL_LIBRARY_DIRS}/include
     ${websocket_LIBRARY_DIRS}/include
     ${MQTT_LIBRARY_DIRS}/include
+    ${EVENT_LIBRARY_DIRS}/include
 )
 
 
@@ -60,7 +62,10 @@ include_directories(
 set(SRC_SOURCES
     src/main.c
  #   src/fsm.c
-    src/log.c
+ #   src/log.c
+  #   src/event_framework.c
+  #  src/ftp.c
+     src/base64.c
  #   src/package.c
  #   src/mqtt.c
  #   src/message.c
@@ -77,11 +82,13 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
 #    sqlite3
 #    json-c
-#     ssl
-#     crypto
+    ssl
+   crypto
      pthread
-#   ts
-#  curl
+ #  ts
+  z
+#   event
+  curl
 #    websockets
 #    paho-mqtt3cs
 )

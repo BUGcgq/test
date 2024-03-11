@@ -98,3 +98,4 @@ int ocpp_upload_file(const char *url, const char *local_file_path, int mode)
     }
     return 0;
 }
+

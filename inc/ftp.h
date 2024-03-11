@@ -10,7 +10,6 @@ extern "C"
 
 
 
-
 int ocpp_download_file(const char *url, const char *local_file_path, int mode);
 int ocpp_upload_file(const char *url, const char *local_file_path, int mode);
 
