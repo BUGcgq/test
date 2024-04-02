@@ -206,20 +206,21 @@ void connectionLost(void *context, char *cause)
 int mqtt_comm_init()
 {
     MqttConfig mqttConfig;
-    mqttConfig.address = strdup("mqtt.example.com");
+    mqttConfig.address = strdup("i80f1fe0.ala.cn-hangzhou.emqxsl.cn");
     mqttConfig.client_id = strdup("client123");
-    mqttConfig.username = strdup("user");
-    mqttConfig.password = strdup("pass");
-    mqttConfig.port = 80;
-    mqttConfig.tls = 0;
+    mqttConfig.username = strdup("chenguiquan");
+    mqttConfig.password = strdup("123456");
+    mqttConfig.port = 8883;
+    mqttConfig.tls = 1;
     mqttConfig.keepAliveInterval = 60;
-    mqttConfig.ca_path = strdup("/path/to/ca_cert.pem");
-    mqttConfig.private_key_path = strdup("/path/to/private_key.pem");
-    mqttConfig.certificate_path = strdup("/path/to/certificate.pem");
+    mqttConfig.ca_path = strdup("/app/core/ssl/ca/emqxsl-ca.crt");
+    mqttConfig.private_key_path = NULL;
+    mqttConfig.certificate_path = NULL;
     mqttConfig.onMessageArrived = messageArrived;
     mqttConfig.onConnectionLost = connectionLost;
     mqttConfig.onDeliveryComplete = NULL;
 
+connect_mqtt(&client,&mqttConfig);
 
     return 0;
 }

@@ -12,7 +12,7 @@ extern "C"
 #include <pthread.h>
 
 #define MAX_EVENTS 10
-#define THREAD_POOL_SIZE 2
+#define THREAD_POOL_SIZE 2 //最小是2
 
 typedef struct Subscriber
 {
@@ -38,25 +38,10 @@ typedef struct
     size_t dataSize;
 } Event;
 
-typedef struct
-{
-    void (*function)(void *);
-    void *data;
-} Task;
-
-typedef struct
-{
-    pthread_t threads[THREAD_POOL_SIZE];
-    Task queue[MAX_EVENTS];
-    int front, rear, count;
-    pthread_mutex_t lock;
-    pthread_cond_t cond;
-    int stop;
-} ThreadPool;
 
 void init_event_framework();
 void cleanup_event_framework();
-int subscribe_event_topic(int eventType, void (*callback)(void *));
+int subscribe_event_topic(int eventType, void * callback);
 void unsubscribe_event_topic(int subscriberId);
 void publish_event_message(int eventType, void *data, size_t dataSize);
 

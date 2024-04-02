@@ -1,12 +1,14 @@
 #include "event_framework.h"
+#include "thpool.h"
 
 static Event eventQueue[MAX_EVENTS];
 static SubscriberList subscriber_list;
-static ThreadPool threadPool;
+static threadpool threadPool;
 
-// 事件队列
-static void consume_event(Event *event)
+// 新的事件处理函数，作为线程池任务
+void *task_event_handler(void *arg)
 {
+    Event *event = (Event *)arg;
     Subscriber *current = subscriber_list.head;
     while (current)
     {
@@ -19,6 +21,9 @@ static void consume_event(Event *event)
     free(event->data); // 释放事件数据内存
 }
 
+/**
+ * 事件消费者线程的入口函数
+ */
 static void *event_consumer(void *arg)
 {
     while (1)
@@ -32,7 +37,7 @@ static void *event_consumer(void *arg)
 
         Event *event = &eventQueue[subscriber_list.front];
 
-        consume_event(event);
+        thpool_add_work(threadPool, (void *)task_event_handler, event);
 
         if (subscriber_list.front == subscriber_list.rear)
         {
@@ -56,7 +61,7 @@ static void *event_consumer(void *arg)
  * 创建日期: 2024-03-11
  * 函 数 名：init_event_framework
  * 描    述: 初始化事件管理系统
- * 
+ *
  * 特殊说明：无
  * 修改记录: 无
  * *****************************************************************************
@@ -69,22 +74,8 @@ void init_event_framework()
     subscriber_list.rear = -1;
     pthread_mutex_init(&subscriber_list.lock, NULL);
     pthread_cond_init(&subscriber_list.cond, NULL);
-    int i;
-    for (i = 0; i < THREAD_POOL_SIZE; ++i)
-    {
-        if (pthread_create(&threadPool.threads[i], NULL, event_consumer, NULL) != 0)
-        {
-            fprintf(stderr, "Error creating thread %d.\n", i);
-            return;
-        }
-    }
-
-    threadPool.front = 0;
-    threadPool.rear = -1;
-    threadPool.count = 0;
-    threadPool.stop = 0;
-    pthread_mutex_init(&threadPool.lock, NULL);
-    pthread_cond_init(&threadPool.cond, NULL);
+    threadPool = thpool_init(THREAD_POOL_SIZE);
+    thpool_add_work(threadPool, (void *)event_consumer, NULL);
 }
 /**
  * *****************************************************************************
@@ -92,7 +83,7 @@ void init_event_framework()
  * 创建日期: 2024-03-11
  * 函 数 名：cleanup_event_framework
  * 描    述: 反初始化事件管理系统
- * 
+ *
  * 特殊说明：无
  * 修改记录: 无
  * *****************************************************************************
@@ -116,21 +107,10 @@ void cleanup_event_framework()
 
     pthread_mutex_unlock(&subscriber_list.lock);
 
-    pthread_mutex_lock(&threadPool.lock);
-    threadPool.stop = 1;
-    pthread_cond_broadcast(&threadPool.cond);
-    pthread_mutex_unlock(&threadPool.lock);
-    int i;
-    for (i = 0; i < THREAD_POOL_SIZE; ++i)
-    {
-        pthread_join(threadPool.threads[i], NULL);
-    }
+    thpool_destroy(threadPool);
 
     pthread_mutex_destroy(&subscriber_list.lock);
     pthread_cond_destroy(&subscriber_list.cond);
-
-    pthread_mutex_destroy(&threadPool.lock);
-    pthread_cond_destroy(&threadPool.cond);
 }
 /**
  * *****************************************************************************
@@ -138,15 +118,15 @@ void cleanup_event_framework()
  * 创建日期: 2024-03-11
  * 函 数 名：subscribe_event_topic
  * 描    述: 订阅事件主题
- * 
- * 参    数: eventType - [事件类型] 
- * 参    数: callback - [事件回调] 
+ *
+ * 参    数: eventType - [事件类型]
+ * 参    数: callback - [事件回调]
  * 返回类型：int 成功返回事件者id，失败返回-1
  * 特殊说明：无
  * 修改记录: 无
  * *****************************************************************************
  */
-int subscribe_event_topic(int eventType, void (*callback)(void *))
+int subscribe_event_topic(int eventType, void * callback)
 {
     pthread_mutex_lock(&subscriber_list.lock);
 
@@ -175,8 +155,8 @@ int subscribe_event_topic(int eventType, void (*callback)(void *))
  * 创建日期: 2024-03-11
  * 函 数 名：unsubscribe_event_topic
  * 描    述: 根据事件者id取消订阅
- * 
- * 参    数: subscriberId - [事件者id] 
+ *
+ * 参    数: subscriberId - [事件者id]
  * 特殊说明：无
  * 修改记录: 无
  * *****************************************************************************
@@ -215,10 +195,10 @@ void unsubscribe_event_topic(int subscriberId)
  * 创建日期: 2024-03-11
  * 函 数 名：publish_event_message
  * 描    述: 推送事件
- * 
- * 参    数: eventType - [事件类型] 
- * 参    数: data - [数据] 
- * 参    数: dataSize - [长度] 
+ *
+ * 参    数: eventType - [事件类型]
+ * 参    数: data - [数据]
+ * 参    数: dataSize - [长度]
  * 特殊说明：无
  * 修改记录: 无
  * *****************************************************************************
@@ -260,110 +240,3 @@ void publish_event_message(int eventType, void *data, size_t dataSize)
     pthread_cond_signal(&subscriber_list.cond);
     pthread_mutex_unlock(&subscriber_list.lock);
 }
-
-
-
-
-// 订阅者处理函数
-// 观察者的事件处理函数
-// 示例回调函数，模拟事件处理行为
-
-// struct mydata
-// {
-// 	int data_int;
-// 	char data_str[32];
-// };
-
-// void eventHandler(void *data)
-// {
-// 	struct mydata recvdata = *(struct mydata *)data;
-// 	printf("1接收到的数据data_str :%s,data_int :%d\n", recvdata.data_str,recvdata.data_int);
-// }
-// void eventHandler2(void *data)
-// {
-// 	int receivedData = *(int *)data;
-// 	printf("2接收到的数据: %d\n", receivedData);
-// }
-
-// // 发布者线程函数
-// void *publisherThread(void *arg)
-// {
-
-// 	char *data_str = "cgq"; // 模拟要发布的数据
-// 	int data_int = 50;
-// 	struct mydata senddata;
-// 	senddata.data_int = 60;
-// 	memcpy(senddata.data_str,"inc",sizeof(senddata.data_str));
-// 	printf("发布者线程: 准备发布数据...\n");
-// 	while (1)
-// 	{
-// 		publish_event_message(1, &senddata,sizeof(senddata));
-// 		sleep(1); // 模拟准备数据的时间
-// 		publish_event_message(2, &data_int,sizeof(data_int));
-// 	}
-
-// 	printf("发布者线程: 数据发布完成。\n");
-// 	return NULL;
-// }
-
-// // 订阅者线程函数
-// void *subscriberThread(void *arg)
-// {
-// 	printf("订阅者线程: 订阅事件...\n");
-// 	int id = subscribe_event_topic(1, eventHandler);
-// 	while (1)
-// 	{
-// 		sleep(1);
-// 	}
-
-// 	return NULL;
-// }
-
-// // 订阅者线程函数
-// void *subscriberThread1(void *arg)
-// {
-// 	printf("订阅者线程: 订阅事件...\n");
-// 	subscribe_event_topic(2, eventHandler2);
-// 	while (1)
-// 	{
-// 		sleep(1);
-// 	}
-
-// 	return NULL;
-// }
-
-// int main()
-// {
-
-// 	init_event_framework();
-// 	pthread_t pubThreadId, subThreadId1, subThreadId2;
-
-// 	// 创建订阅者线程，它会订阅事件并等待处理它们
-// 	if (pthread_create(&subThreadId1, NULL, subscriberThread, NULL) != 0)
-// 	{
-// 		perror("创建订阅者线程失败");
-// 		return 1;
-// 	}
-
-// 	if (pthread_create(&subThreadId2, NULL, subscriberThread1, NULL) != 0)
-// 	{
-// 		perror("创建订阅者线程失败");
-// 		return 1;
-// 	}
-
-// 	// 创建发布者线程，它将在稍后发布一个事件
-// 	if (pthread_create(&pubThreadId, NULL, publisherThread, NULL) != 0)
-// 	{
-// 		perror("创建发布者线程失败");
-// 		return 1;
-// 	}
-
-// 	// 等待两个线程完成
-// 	pthread_join(pubThreadId, NULL);
-// 	pthread_join(subThreadId1, NULL);
-
-// 	// 清理订阅列表和其他资源
-// 	cleanup_event_framework();
-
-// 	return 0;
-// }
