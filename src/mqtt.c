@@ -3,10 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "mqtt.h"
-#include "list.h"
-
-MQTTClient client = NULL;
+#include "tcu_mqtt.h"
 
 /**
  * *****************************************************************************
@@ -14,32 +11,43 @@ MQTTClient client = NULL;
  * 创建日期: 2024-03-11
  * 函 数 名：connect_mqtt
  * 描    述: 初始化MQTT连接
- * 
- * 参    数: client - [MQTTClient] 
- * 参    数: config - [配置结构体] 
+ *
+ * 参    数: client - [MQTTClient]
+ * 参    数: config - [配置结构体]
  * 返回类型：int
  * 特殊说明：无
  * 修改记录: 无
  * *****************************************************************************
  */
 
-int connect_mqtt(MQTTClient *client, MqttConfig *config)
+int connect_mqtt(MQTTClient *client, MqttConfig *config, MQTTClient_connectionLost *onConnectionLost,
+                 MQTTClient_messageArrived *onMessageArrived,
+                 MQTTClient_deliveryComplete *onDeliveryComplete)
 {
+    if (client == NULL || config == NULL || onConnectionLost == NULL || onMessageArrived == NULL)
+    {
+        printf("Invalid input parameters.\n");
+        return -1;
+    }
+
     int rc;
     char url[100] = {0};
-    const char *protocol = (config->tls) ? "tls://" : "tcp://";
+    const char *protocol = (config->tls) ? "ssl://" : "tcp://";
 
     snprintf(url, sizeof(url), "%s%s:%d", protocol, config->address, config->port);
-    printf("url = %s ,client_id = %s\n", url, config->client_id);
-    if ((rc = MQTTClient_create(client, url, config->client_id, MQTTCLIENT_PERSISTENCE_NONE, NULL)) != MQTTCLIENT_SUCCESS)
+    printf("Connecting to URL: %s , Client ID: %s\n", url, config->client_id);
+
+    rc = MQTTClient_create(client, url, config->client_id, MQTTCLIENT_PERSISTENCE_NONE, NULL);
+    if (rc != MQTTCLIENT_SUCCESS)
     {
         printf("Failed to create mqtt client, return code %d\n", rc);
         return -1;
     }
 
-    if ((rc = MQTTClient_setCallbacks(*client, NULL, config->onConnectionLost, config->onMessageArrived, config->onDeliveryComplete)) != MQTTCLIENT_SUCCESS)
+    rc = MQTTClient_setCallbacks(*client, NULL, onConnectionLost, onMessageArrived, onDeliveryComplete);
+    if (rc != MQTTCLIENT_SUCCESS)
     {
-        printf("MQTT Failed to set callbacks, return code %d\n", rc);
+        printf("Failed to set callbacks, return code %d\n", rc);
         return -1;
     }
 
@@ -56,34 +64,40 @@ int connect_mqtt(MQTTClient *client, MqttConfig *config)
         MQTTClient_SSLOptions ssl_opts = MQTTClient_SSLOptions_initializer;
 
         // 配置TLS选项
+        ssl_opts.enableServerCertAuth = (config->ca_path != NULL) ? 1 : 0; // 如果trustStore不为NULL，则启用服务器证书认证，否则禁用
         ssl_opts.trustStore = (config->ca_path != NULL) ? config->ca_path : NULL;
         ssl_opts.privateKey = (config->private_key_path != NULL) ? config->private_key_path : NULL;
         ssl_opts.keyStore = (config->certificate_path != NULL) ? config->certificate_path : NULL;
         ssl_opts.sslVersion = MQTT_SSL_VERSION_DEFAULT;
 
         conn_opts.ssl = &ssl_opts;
+        conn_opts.ssl = &ssl_opts;
     }
 
     // 连接到MQTT服务器
-    if ((rc = MQTTClient_connect(*client, &conn_opts)) != MQTTCLIENT_SUCCESS)
+    rc = MQTTClient_connect(*client, &conn_opts);
+    if (rc != MQTTCLIENT_SUCCESS)
     {
         printf("Failed to connect, return code %d\n", rc);
         return -1;
     }
 
+    printf("Connected successfully!\n");
+
     return MQTTCLIENT_SUCCESS;
 }
+
 /**
  * *****************************************************************************
  * 作    者: 陈贵全
  * 创建日期: 2024-03-11
  * 函 数 名：publish_message
  * 描    述: 发布消息
- * 
- * 参    数: client - [MQTTClient] 
- * 参    数: topic - [主题] 
- * 参    数: payload - [信息] 
- * 参    数: qos - [策略] 
+ *
+ * 参    数: client - [MQTTClient]
+ * 参    数: topic - [主题]
+ * 参    数: payload - [信息]
+ * 参    数: qos - [策略]
  * 返回类型：int
  * 特殊说明：无
  * 修改记录: 无
@@ -92,6 +106,11 @@ int connect_mqtt(MQTTClient *client, MqttConfig *config)
 
 int publish_message(MQTTClient client, const char *topic, const char *payload, int qos)
 {
+    if (client == NULL)
+    {
+        return -1;
+    }
+
     MQTTClient_deliveryToken token;
     MQTTClient_message pubmsg = MQTTClient_message_initializer;
 
@@ -120,10 +139,10 @@ int publish_message(MQTTClient client, const char *topic, const char *payload, i
  * 创建日期: 2024-03-11
  * 函 数 名：subscribe_topic
  * 描    述: 订阅主题
- * 
- * 参    数: client - [MQTTClient] 
- * 参    数: topic - [主题] 
- * 参    数: qos - [策略] 
+ *
+ * 参    数: client - [MQTTClient]
+ * 参    数: topic - [主题]
+ * 参    数: qos - [策略]
  * 返回类型：int
  * 特殊说明：无
  * 修改记录: 无
@@ -152,9 +171,9 @@ int subscribe_topic(MQTTClient client, char *topic, int qos)
  * 创建日期: 2024-03-11
  * 函 数 名：unsubscribe_topic
  * 描    述: 取消订阅主题
- * 
- * 参    数: client - [MQTTClient] 
- * 参    数: topic - [主题] 
+ *
+ * 参    数: client - [MQTTClient]
+ * 参    数: topic - [主题]
  * 返回类型：int
  * 特殊说明：无
  * 修改记录: 无
@@ -162,6 +181,11 @@ int subscribe_topic(MQTTClient client, char *topic, int qos)
  */
 int unsubscribe_topic(MQTTClient client, const char *topic)
 {
+    if (client == NULL)
+    {
+        return -1;
+    }
+
     if (MQTTClient_unsubscribe(client, topic) != MQTTCLIENT_SUCCESS)
     {
         printf("MQTT Failed to unsubscribe from topic %s\n", topic);
@@ -176,51 +200,21 @@ int unsubscribe_topic(MQTTClient client, const char *topic)
  * 创建日期: 2024-03-11
  * 函 数 名：disconnect_mqtt
  * 描    述: 断开连接
- * 
- * 参    数: client - [MQTTClient] 
+ *
+ * 参    数: client - [MQTTClient]
  * 特殊说明：无
  * 修改记录: 无
  * *****************************************************************************
  */
 void disconnect_mqtt(MQTTClient client)
 {
+    if (client == NULL)
+    {
+        return;
+    }
+
     MQTTClient_disconnect(client, 1000);
     MQTTClient_destroy(&client);
 }
 
 
-int messageArrived(void *context, char *topicName, int topicLen, MQTTClient_message *message)
-{
-    printf(RED_COLOR "[topicName] = %s [payload] = %s\n\n" RESET_COLOR, topicName, (char *)message->payload);
-
-    return 1;
-}
-
-// 回调函数：连接丢失
-void connectionLost(void *context, char *cause)
-{
-
-}
-
-
-int mqtt_comm_init()
-{
-    MqttConfig mqttConfig;
-    mqttConfig.address = strdup("i80f1fe0.ala.cn-hangzhou.emqxsl.cn");
-    mqttConfig.client_id = strdup("client123");
-    mqttConfig.username = strdup("chenguiquan");
-    mqttConfig.password = strdup("123456");
-    mqttConfig.port = 8883;
-    mqttConfig.tls = 1;
-    mqttConfig.keepAliveInterval = 60;
-    mqttConfig.ca_path = strdup("/app/core/ssl/ca/emqxsl-ca.crt");
-    mqttConfig.private_key_path = NULL;
-    mqttConfig.certificate_path = NULL;
-    mqttConfig.onMessageArrived = messageArrived;
-    mqttConfig.onConnectionLost = connectionLost;
-    mqttConfig.onDeliveryComplete = NULL;
-
-connect_mqtt(&client,&mqttConfig);
-
-    return 0;
-}

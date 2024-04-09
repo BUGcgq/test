@@ -21,27 +21,31 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 
 # 设置库文件路径
-set(openssl_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/openssl-1.1.0g-nuc970)
+set(OPENSSL_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/openssl-1.1.0g-nuc970)
+set(MODBUS_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libmodbus-3.1.6-nuc970)
 set(CURL_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libcurl)
 set(MQTT_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libpaho-mqtt3)
 set(EVENT_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libevent)
 
+
 # 添加链接库搜索路径
 link_directories(
-    ${openssl_LIBRARY_DIRS}/lib
+    ${OPENSSL_LIBRARY_DIRS}/lib
     ${CURL_LIBRARY_DIRS}/lib
     ${MQTT_LIBRARY_DIRS}/lib
     ${EVENT_LIBRARY_DIRS}/lib
+    ${MODBUS_LIBRARY_DIRS}/lib
 )
 
 # 添加头文件搜索路径
 include_directories(
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/inc
-    ${openssl_LIBRARY_DIRS}/include
+    ${OPENSSL_LIBRARY_DIRS}/include
     ${CURL_LIBRARY_DIRS}/include
     ${MQTT_LIBRARY_DIRS}/include
     ${EVENT_LIBRARY_DIRS}/include
+    ${MODBUS_LIBRARY_DIRS}/include
 )
 
 
@@ -49,9 +53,9 @@ include_directories(
 # 添加 src 源文件
 set(SRC_SOURCES
     src/main.c
-    src/thpool.c
+#    src/thpool.c
 #   src/log.c
-    src/event_framework.c
+#    src/event_framework.c
 #  src/ftp.c
 #    src/base64.c
 #   src/mqtt.c
@@ -68,9 +72,10 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
 #    ssl
 #    crypto
-    pthread
+#    pthread
+    modbus
 #    event
 #    z
 #    curl
-#   paho-mqtt3cs
+#    paho-mqtt3cs
 )
