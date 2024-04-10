@@ -1,53 +1,76 @@
 #include "event_framework.h"
 #include "thpool.h"
 
-static Event eventQueue[MAX_EVENTS];
 static SubscriberList subscriber_list;
 static threadpool threadPool;
-
-// 新的事件处理函数，作为线程池任务
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-04-10
+ * 函 数 名：task_event_handler
+ * 描    述: 异步遍历链表
+ *
+ * 参    数: arg - [参数说明]
+ * 返回类型：void*
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
 void *task_event_handler(void *arg)
 {
-    Event *event = (Event *)arg;
-    Subscriber *current = subscriber_list.head;
+    pthread_mutex_lock(&subscriber_list.lock);
+
+    EventNode *current = subscriber_list.events;
     while (current)
     {
-        if (current->eventType == event->eventType)
+        SubscriberNode *subscriber_current = subscriber_list.subscribers;
+        while (subscriber_current)
         {
-            current->callback(event->data); // 调用订阅者的回调函数
+            if (subscriber_current->subscriber.eventType == current->event.eventType)
+            {
+                subscriber_current->subscriber.callback(current->event.data); // 调用订阅者的回调函数
+            }
+            subscriber_current = subscriber_current->next;
         }
+
+        EventNode *temp = current;
         current = current->next;
+        free(temp->event.data);
+        free(temp);
     }
-    free(event->data); // 释放事件数据内存
+
+    subscriber_list.events = NULL;
+
+    pthread_mutex_unlock(&subscriber_list.lock);
+
+    return NULL;
 }
 
 /**
- * 事件消费者线程的入口函数
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-04-10
+ * 函 数 名：task_consumer_handler
+ * 描    述: 异步处理事件
+ *
+ * 参    数: arg - [参数说明]
+ * 返回类型：void*
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
  */
-static void *event_consumer(void *arg)
+static void *task_consumer_handler(void *arg)
 {
     while (1)
     {
         pthread_mutex_lock(&subscriber_list.lock);
 
-        while (subscriber_list.front == -1)
+        while (subscriber_list.events == NULL)
         {
             pthread_cond_wait(&subscriber_list.cond, &subscriber_list.lock);
         }
 
-        Event *event = &eventQueue[subscriber_list.front];
-
-        thpool_add_work(threadPool, (void *)task_event_handler, event);
-
-        if (subscriber_list.front == subscriber_list.rear)
-        {
-            subscriber_list.front = -1;
-            subscriber_list.rear = -1;
-        }
-        else
-        {
-            subscriber_list.front = (subscriber_list.front + 1) % MAX_EVENTS;
-        }
+        thpool_add_work(threadPool, (void *)task_event_handler, NULL);
 
         pthread_mutex_unlock(&subscriber_list.lock);
     }
@@ -62,20 +85,25 @@ static void *event_consumer(void *arg)
  * 函 数 名：init_event_framework
  * 描    述: 初始化事件管理系统
  *
+ * 参    数: PoolNum - [事件类型]
  * 特殊说明：无
  * 修改记录: 无
  * *****************************************************************************
  */
-void init_event_framework()
+void init_event_framework(int PoolNum)
 {
-    subscriber_list.head = NULL;
+    if (PoolNum < 2)
+    {
+        PoolNum = 2;
+    }
+
+    subscriber_list.subscribers = NULL;
     subscriber_list.next_id = 1;
-    subscriber_list.front = -1;
-    subscriber_list.rear = -1;
+    subscriber_list.events = NULL;
     pthread_mutex_init(&subscriber_list.lock, NULL);
     pthread_cond_init(&subscriber_list.cond, NULL);
-    threadPool = thpool_init(THREAD_POOL_SIZE);
-    thpool_add_work(threadPool, (void *)event_consumer, NULL);
+    threadPool = thpool_init(PoolNum);
+    thpool_add_work(threadPool, (void *)task_consumer_handler, NULL);
 }
 /**
  * *****************************************************************************
@@ -92,18 +120,26 @@ void cleanup_event_framework()
 {
     pthread_mutex_lock(&subscriber_list.lock);
 
-    Subscriber *current = subscriber_list.head;
-    while (current != NULL)
+    SubscriberNode *current_subscriber = subscriber_list.subscribers;
+    while (current_subscriber != NULL)
     {
-        Subscriber *temp = current;
-        current = current->next;
-        free(temp);
+        SubscriberNode *temp_subscriber = current_subscriber;
+        current_subscriber = current_subscriber->next;
+        free(temp_subscriber);
     }
 
-    subscriber_list.head = NULL;
+    EventNode *current_event = subscriber_list.events;
+    while (current_event != NULL)
+    {
+        EventNode *temp_event = current_event;
+        current_event = current_event->next;
+        free(temp_event->event.data);
+        free(temp_event);
+    }
+
+    subscriber_list.subscribers = NULL;
     subscriber_list.next_id = 1;
-    subscriber_list.front = -1;
-    subscriber_list.rear = -1;
+    subscriber_list.events = NULL;
 
     pthread_mutex_unlock(&subscriber_list.lock);
 
@@ -120,34 +156,49 @@ void cleanup_event_framework()
  * 描    述: 订阅事件主题
  *
  * 参    数: eventType - [事件类型]
+ * 参    数: priority - [优先级]
  * 参    数: callback - [事件回调]
  * 返回类型：int 成功返回事件者id，失败返回-1
  * 特殊说明：无
  * 修改记录: 无
  * *****************************************************************************
  */
-int subscribe_event_topic(int eventType, void * callback)
+int subscribe_event_topic(int eventType, int priority, void *callback)
 {
     pthread_mutex_lock(&subscriber_list.lock);
 
-    Subscriber *newSub = (Subscriber *)malloc(sizeof(Subscriber));
-    if (newSub == NULL)
+    SubscriberNode *newSubNode = (SubscriberNode *)malloc(sizeof(SubscriberNode));
+    if (newSubNode == NULL)
     {
         perror("无法分配内存");
         pthread_mutex_unlock(&subscriber_list.lock);
-        return -1; // 返回-1表示订阅失败
+        return -1;
     }
 
-    newSub->id = subscriber_list.next_id++;
-    newSub->eventType = eventType;
-    newSub->callback = callback;
+    newSubNode->subscriber.id = subscriber_list.next_id++;
+    newSubNode->subscriber.eventType = eventType;
+    newSubNode->subscriber.callback = callback;
+    newSubNode->subscriber.priority = priority;
 
-    newSub->next = subscriber_list.head;
-    subscriber_list.head = newSub;
+    if (subscriber_list.subscribers == NULL || subscriber_list.subscribers->subscriber.priority < priority)
+    {
+        newSubNode->next = subscriber_list.subscribers;
+        subscriber_list.subscribers = newSubNode;
+    }
+    else
+    {
+        SubscriberNode *current = subscriber_list.subscribers;
+        while (current->next != NULL && current->next->subscriber.priority >= priority)
+        {
+            current = current->next;
+        }
+        newSubNode->next = current->next;
+        current->next = newSubNode;
+    }
 
     pthread_mutex_unlock(&subscriber_list.lock);
 
-    return newSub->id;
+    return newSubNode->subscriber.id;
 }
 /**
  * *****************************************************************************
@@ -165,10 +216,10 @@ void unsubscribe_event_topic(int subscriberId)
 {
     pthread_mutex_lock(&subscriber_list.lock);
 
-    Subscriber *current = subscriber_list.head;
-    Subscriber *prev = NULL;
+    SubscriberNode *current = subscriber_list.subscribers;
+    SubscriberNode *prev = NULL;
 
-    while (current != NULL && current->id != subscriberId)
+    while (current != NULL && current->subscriber.id != subscriberId)
     {
         prev = current;
         current = current->next;
@@ -178,7 +229,7 @@ void unsubscribe_event_topic(int subscriberId)
     {
         if (prev == NULL)
         {
-            subscriber_list.head = current->next;
+            subscriber_list.subscribers = current->next;
         }
         else
         {
@@ -207,35 +258,28 @@ void publish_event_message(int eventType, void *data, size_t dataSize)
 {
     pthread_mutex_lock(&subscriber_list.lock);
 
-    if ((subscriber_list.rear + 1) % MAX_EVENTS == subscriber_list.front)
-    {
-        printf("Event queue is full. Event not published.\n");
-        pthread_mutex_unlock(&subscriber_list.lock);
-        return;
-    }
-
-    if (subscriber_list.front == -1)
-    {
-        subscriber_list.front = 0;
-        subscriber_list.rear = 0;
-    }
-    else
-    {
-        subscriber_list.rear = (subscriber_list.rear + 1) % MAX_EVENTS;
-    }
-
-    Event *event = &eventQueue[subscriber_list.rear];
-    event->eventType = eventType;
-
-    event->data = malloc(dataSize);
-    if (event->data == NULL)
+    EventNode *newNode = (EventNode *)malloc(sizeof(EventNode));
+    if (newNode == NULL)
     {
         perror("无法分配内存");
-        subscriber_list.rear = (subscriber_list.rear - 1 + MAX_EVENTS) % MAX_EVENTS;
         pthread_mutex_unlock(&subscriber_list.lock);
         return;
     }
-    memcpy(event->data, data, dataSize);
+
+    newNode->event.eventType = eventType;
+
+    newNode->event.data = malloc(dataSize);
+    if (newNode->event.data == NULL)
+    {
+        perror("无法分配内存");
+        free(newNode);
+        pthread_mutex_unlock(&subscriber_list.lock);
+        return;
+    }
+    memcpy(newNode->event.data, data, dataSize);
+
+    newNode->next = subscriber_list.events;
+    subscriber_list.events = newNode;
 
     pthread_cond_signal(&subscriber_list.cond);
     pthread_mutex_unlock(&subscriber_list.lock);

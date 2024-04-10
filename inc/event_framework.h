@@ -11,37 +11,48 @@ extern "C"
 #include <string.h>
 #include <pthread.h>
 
-#define MAX_EVENTS 10
-#define THREAD_POOL_SIZE 2 //最小是2
+typedef void (*CallbackFunction)(void *);
 
 typedef struct Subscriber
 {
     int id;
     int eventType;
-    void (*callback)(void *);
-    struct Subscriber *next;
+    int priority;
+    CallbackFunction callback;
 } Subscriber;
 
-typedef struct
+typedef struct SubscriberNode
 {
-    Subscriber *head;
-    pthread_mutex_t lock;
-    pthread_cond_t cond;
-    int next_id;
-    int front, rear;
-} SubscriberList;
+    Subscriber subscriber;
+    struct SubscriberNode *next;
+} SubscriberNode;
 
-typedef struct
+
+typedef struct Event
 {
     int eventType;
     void *data;
     size_t dataSize;
 } Event;
 
+typedef struct EventNode
+{
+    Event event;
+    struct EventNode *next;
+} EventNode;
 
-void init_event_framework();
+typedef struct SubscriberList
+{
+    pthread_mutex_t lock;
+    pthread_cond_t cond;
+    EventNode *events;
+    SubscriberNode *subscribers;
+    int next_id;
+} SubscriberList;
+
+void init_event_framework(int PoolNum);
 void cleanup_event_framework();
-int subscribe_event_topic(int eventType, void * callback);
+int subscribe_event_topic(int eventType, int priority, void *callback);
 void unsubscribe_event_topic(int subscriberId);
 void publish_event_message(int eventType, void *data, size_t dataSize);
 

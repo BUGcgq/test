@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "tcu_mqtt.h"
+#include "mqtt.h"
 
 /**
  * *****************************************************************************
@@ -218,3 +218,89 @@ void disconnect_mqtt(MQTTClient client)
 }
 
 
+int messageArrived(void *context, char *topicName, int topicLen, MQTTClient_message *message)
+{
+    printf("[RECV] = topic : %s\npayload : %s\n\n", topicName, (char *)message->payload);
+}
+
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-03-26
+ * 函 数 名：connectionLost
+ * 描    述: 连接丢失回调
+ *
+ * 参    数: context - [参数说明]
+ * 参    数: cause - [原因]
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
+void connectionLost(void *context, char *cause)
+{
+}
+
+// int main()
+// {
+//     MqttConfig config;
+//     config.address = strdup("i80f1fe0.ala.cn-hangzhou.emqxsl.cn");
+//     config.client_id = strdup("increase");
+//     config.username = strdup("chenguiquan");
+//     config.password = strdup("123456");
+//     config.port = 8883;
+//     config.tls = 1;
+//     config.keepAliveInterval = 60;
+//     config.ca_path = NULL;
+
+//     MQTTClient client = NULL;
+
+//     int ret = -1;
+//     if (connect_mqtt(&client, &config, connectionLost, messageArrived, NULL) == MQTTCLIENT_SUCCESS)
+//     {
+//         printf("连接服务器成功\n");
+//     }
+//     else
+//     {
+//         return;
+//     }
+
+//     char cmd[10];
+//     while (1)
+//     {
+//         printf("请输入命令(1 - 订阅主题,2 - 发布消息,3 - 退出）: ");
+//         scanf("%s", cmd);
+
+//         if (strcmp(cmd, "1") == 0)
+//         {
+//             char topic[100];
+//             int qos = 1; 
+//             printf("请输入要订阅的主题: ");
+//             scanf("%s", topic);
+//             subscribe_topic(client, topic, qos);
+//         }
+//         else if (strcmp(cmd, "2") == 0)
+//         {
+//             char topic[100];
+//             char payload[100];
+//             int qos = 1; 
+//             printf("请输入要发布的主题: ");
+//             scanf("%s", topic);
+//             printf("请输入要发布的消息: ");
+//             scanf("%s", payload);
+//             publish_message(client, topic, payload, qos);
+//         }
+//         else if (strcmp(cmd, "3") == 0)
+//         {
+//             break;
+//         }
+//         else
+//         {
+//             printf("无效的命令，请重新输入.\n");
+//         }
+
+//         // 清空输入缓冲
+//         while (getchar() != '\n');
+//     }
+
+//     return 0;
+// }

@@ -53,9 +53,9 @@ include_directories(
 # 添加 src 源文件
 set(SRC_SOURCES
     src/main.c
-#    src/thpool.c
+    src/thpool.c
 #   src/log.c
-#    src/event_framework.c
+    src/event_framework.c
 #  src/ftp.c
 #    src/base64.c
 #   src/mqtt.c
@@ -70,12 +70,14 @@ add_executable(${PROJECT_NAME}
 
 # 链接库
 target_link_libraries(${PROJECT_NAME}
-#    ssl
-#    crypto
-#    pthread
-    modbus
-#    event
-#    z
-#    curl
+    pthread
+    z
+    m
+    dl
 #    paho-mqtt3cs
+#    ssl
+#   crypto
+#    curl
+#   event
+#    modbus
 )
