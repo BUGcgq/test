@@ -11,14 +11,14 @@ extern "C"
 #include <string.h>
 #include <pthread.h>
 
-typedef void (*CallbackFunction)(void *);
+typedef void (*EventCallBackFuc)(void *);
 
 typedef struct Subscriber
 {
     int id;
     int eventType;
     int priority;
-    CallbackFunction callback;
+    EventCallBackFuc callback;
 } Subscriber;
 
 typedef struct SubscriberNode

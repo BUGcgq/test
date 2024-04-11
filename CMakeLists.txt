@@ -55,7 +55,9 @@ set(SRC_SOURCES
     src/main.c
     src/thpool.c
 #   src/log.c
-    src/event_framework.c
+#    src/event_framework.c
+    src/config.c
+    src/CJSON.c
 #  src/ftp.c
 #    src/base64.c
 #   src/mqtt.c
