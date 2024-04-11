@@ -49,6 +49,9 @@ include_directories(
 )
 
 
+# 添加宏定义
+add_definitions(-DNETWORK -DCGQ)  # 添加名为DEBUG的宏定义
+
 
 # 添加 src 源文件
 set(SRC_SOURCES
@@ -56,8 +59,9 @@ set(SRC_SOURCES
     src/thpool.c
 #   src/log.c
 #    src/event_framework.c
-    src/config.c
+    src/CFG_prontocolinfo.c
     src/CJSON.c
+    src/APIS_Json.c
 #  src/ftp.c
 #    src/base64.c
 #   src/mqtt.c
