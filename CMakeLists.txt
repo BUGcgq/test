@@ -56,14 +56,18 @@ add_definitions(-DNETWORK -DCGQ)  # 添加名为DEBUG的宏定义
 # 添加 src 源文件
 set(SRC_SOURCES
     src/main.c
-    src/thpool.c
+    src/APIS_CcuComm.c
+    src/IncComType.c
+#    src/GBBMSComm.c
+   src/thpool.c
+   src/ToolFunc.c
 #   src/log.c
-#    src/event_framework.c
-    src/CFG_prontocolinfo.c
-    src/CJSON.c
-    src/APIS_Json.c
-#  src/ftp.c
-#    src/base64.c
+#   src/event_framework.c
+#   src/CFG_prontocolinfo.c
+#   src/CJSON.c
+#   src/APIS_Json.c
+#   src/ftp.c
+#   src/base64.c
 #   src/mqtt.c
 #   src/list.c
 )
@@ -80,10 +84,10 @@ target_link_libraries(${PROJECT_NAME}
     z
     m
     dl
+#    event
 #    paho-mqtt3cs
+#    curl
 #    ssl
 #   crypto
-#    curl
-#   event
-#    modbus
+
 )
