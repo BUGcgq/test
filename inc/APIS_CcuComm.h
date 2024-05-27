@@ -39,7 +39,7 @@ extern "C"
 #define TELEMETRY_SYS_DATA_LEN               0X07                //充电桩系统数据长度
 #define TELEMETRY_IDLE_DATA_LEN              0x20                //遥测空闲数据长度
 #define TELEMETRY_CHARGE_DATA_LEN            0x54                //遥测充电中数据长度
-#define TELEMETRY_RECT_DATA_LEN              0X07                //一个模块数据长度
+#define TELEMETRY_RECT_DATA_LEN              0x0A                //一个模块数据长度
 //设置配置
 #define CONTROLLER_CONFIG_START_ADDR         0x1000               //控制器配置数据起始地址
 #define CONTROLLER_CONFIG_DATA_LEN           0X10                 //控制器配置数据长度
@@ -138,11 +138,12 @@ typedef struct DATA_CHARGER_INFO_T
 
 typedef struct DATA_RECT_INFO_T
 {
-    U8_T rectState;//整流模块状态定义
+    U8_T commState;//通信状态
+    U32_T rectState;//整流模块状态定义
     F32_T rectOutVolt;//整流模块输出电压
     F32_T rectOutCurr;//整流模块输出电流
-    S16_T rectLimitPoint;//整流模块限流点
-    S16_T rectTemp;//整流模块温度
+    F32_T rectLimitPoint;//整流模块限流点
+    F32_T rectTemp;//整流模块温度
     F32_T rectOutPower;//整流模块输出功率
 } DATA_RECT_INFO_T,*pstDATA_RECT_INFO_T;
 
@@ -223,8 +224,8 @@ typedef struct CFG_CCU_INFO_T
 
 /* 定义回调函数类型 */
 typedef U32_T (*CCU_RECV_ERROR_F)(U16_T funCode,U16_T errorCode);
-typedef U32_T (*CCU_RECV_CONFIG_FINISH_F)(U16_T startAddr);
-typedef U32_T (*CCU_RECV_MESSAGE_F)(U16_T funcAddr);
+typedef U32_T (*CCU_RECV_CONFIG_FINISH_F)();
+typedef U32_T (*CCU_RECV_MESSAGE_F)();
 typedef U32_T (*CCU_RECV_CONFIG_REQ_F)();
 typedef U32_T (*CCU_RECV_DI_STATE_F)(U16_T diState);
 typedef U32_T (*CCU_RECV_CHARGE_STATE_F)(U16_T gunID,U16_T chrState);

@@ -6,12 +6,16 @@ extern "C"
 {
 #endif
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include "curl/curl.h"
 
 
 
-int ftp_download_file(const char *url, const char *local_file_path, int mode);
-int ftp_upload_file(const char *url, const char *local_file_path, int mode);
+int ET_FTP_downloadFile(const char *url, const char *local_file_path, int mode);
+int ET_FTP_uploadFile(const char *url, const char *local_file_path, int mode);
 
 
 

@@ -59,7 +59,7 @@ set(SRC_SOURCES
     src/APIS_CcuComm.c
     src/IncComType.c
 #    src/GBBMSComm.c
-   src/thpool.c
+#   src/thpool.c
    src/ToolFunc.c
 #   src/log.c
 #   src/event_framework.c
