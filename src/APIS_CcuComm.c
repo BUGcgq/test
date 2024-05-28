@@ -322,7 +322,6 @@ static U32_T ET_CCU_ParseSysData(U32_T n)
 {
     U16_T u16_temp_data = 0;
     static U16_T u16_diState = 0;
-    U32_T len = g_rxBuf[n + 2] / 2;
     U32_T (*fn_RecvDiState)
     (U16_T) = CCU_GetServiceCallback(CCU_RECV_DI_STATE);
     U32_T offset = n + 3;
@@ -331,22 +330,22 @@ static U32_T ET_CCU_ParseSysData(U32_T n)
 
     // 充电桩内部通信协议版本
     u16_temp_data = (g_rxBuf[offset] << 8) | (g_rxBuf[offset + 1]);
-    data.version = (U8_T)u16_temp_data;
+    data.version = u16_temp_data;
 
     // 整流模块输出电压
     u16_temp_data = (g_rxBuf[offset + 2] << 8) | (g_rxBuf[offset + 3]);
     data.ccuSwVer = u16_temp_data;
 
     // 整流模块输出电流
-    u16_temp_data = (g_rxBuf[offset + 4] << 8) | (g_rxBuf[offset + 5]);
-    data.ccuSwVer = u16_temp_data;
+    u16_temp_data = (g_rxBuf[offset + 6] << 8) | (g_rxBuf[offset + 7]);
+    data.tcuHwVer = u16_temp_data;
 
     // 充电桩环境温度
-    u16_temp_data = (g_rxBuf[offset + 6] << 8) | (g_rxBuf[offset + 7]);
+    u16_temp_data = (g_rxBuf[offset + 10] << 8) | (g_rxBuf[offset + 11]);
     data.caseTemp = (F32_T)u16_temp_data / 10;
 
     // CCU控制器DI状态
-    u16_temp_data = (g_rxBuf[offset + 8] << 8) | (g_rxBuf[offset + 9]);
+    u16_temp_data = (g_rxBuf[offset + 12] << 8) | (g_rxBuf[offset + 13]);
     data.diStatus = u16_temp_data;
 
     pthread_mutex_lock(&g_ccuLock);
@@ -385,14 +384,17 @@ static U32_T ET_CCU_ParseChargeData(U32_T n, U32_T gunID)
     U64_T u64_temp_data = 0;
     static U16_T u16_gunState = 0;
     static U16_T u16_chargeState = 0;
-    U32_T len = g_rxBuf[n + 2] / 2;
 
     U32_T offset = n + 3;
 
-    U32_T (*fn_RecvChargeState)(U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_CHARGE_STATE);
-    U32_T (*fn_RecvGunState)(U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_GUN_STATE);
-    U32_T (*fn_RecvState1Fault)(U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_CCU_STATE1_FAULT);
-    U32_T (*fn_RecvState2Fault)(U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_CCU_STATE2_FAULT);
+    U32_T (*fn_RecvChargeState)
+    (U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_CHARGE_STATE);
+    U32_T (*fn_RecvGunState)
+    (U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_GUN_STATE);
+    U32_T (*fn_RecvState1Fault)
+    (U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_CCU_STATE1_FAULT);
+    U32_T (*fn_RecvState2Fault)
+    (U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_CCU_STATE2_FAULT);
 
     DATA_CHARGER_INFO_T data;
     memset(&data, 0, sizeof(DATA_CHARGER_INFO_T));
@@ -677,14 +679,15 @@ static U32_T ET_CCU_ParseRectData(U32_T n)
     U16_T u16_temp_data = 0;
     U32_T u32_temp_data = 0;
     U32_T i, offset;
-    U32_T (*fn_RecvRectFault)(U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_RECT_FAULT);
-    offset = n + 3;
+    U32_T (*fn_RecvRectFault)
+    (U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_RECT_FAULT);
     pthread_mutex_lock(&g_ccuLock);
     for (i = 0; i < g_rectNum; i++)
     {
-        offset = i * TELEMETRY_RECT_DATA_LEN * 2 + offset;
+
+        offset = i * TELEMETRY_RECT_DATA_LEN * 2 + 3;
         // 整流模块通信状态定义
-        u16_temp_data = (g_rxBuf[offset] << 8) | (g_rxBuf[offset + 1] ); 
+        u16_temp_data = (g_rxBuf[offset] << 8) | (g_rxBuf[offset + 1]);
         g_rectData[i].commState = u16_temp_data;
         // 整流模块状态定义
         u32_temp_data = (g_rxBuf[offset + 2] << 24) | (g_rxBuf[offset + 3] << 16) |
@@ -733,7 +736,8 @@ static U32_T ET_CCU_ParseRectData(U32_T n)
  */
 static U32_T ET_CCU_ParseTelemetryData(U32_T n)
 {
-    U32_T (*fn_RecvMsg)() = CCU_GetServiceCallback(CCU_RECV_MESSAGE);
+    U32_T (*fn_RecvMsg)
+    () = CCU_GetServiceCallback(CCU_RECV_MESSAGE);
     switch (lastSendAddr)
     {
     case TELEMETRY_SYS_DATA_START_ADDR:
@@ -779,7 +783,8 @@ static U32_T ET_CCU_ParseErrorData(U32_T n, U32_T index)
 
     u16_error_code = (g_rxBuf[n + 2] << 8) | g_rxBuf[n + 3];
 
-    U32_T (*fn_RecvError)(U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_ERROR);
+    U32_T (*fn_RecvError)
+    (U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_ERROR);
     if (fn_RecvError != NULL)
     {
         fn_RecvError(u8_original_index, u16_error_code);
@@ -802,8 +807,10 @@ static U32_T ET_CCU_ParseErrorData(U32_T n, U32_T index)
 static U32_T CCU_RecvCmdHandle(U32_T n)
 {
     U8_T index = g_rxBuf[n + 1];
-    U32_T (*fn_RecvConfigReq)() = CCU_GetServiceCallback(CCU_RECV_CONFIG_REQ);
-    U32_T (*fn_RecvConfFinish)() = CCU_GetServiceCallback(CCU_RECV_CONFIG_FINISH);
+    U32_T (*fn_RecvConfigReq)
+    () = CCU_GetServiceCallback(CCU_RECV_CONFIG_REQ);
+    U32_T (*fn_RecvConfFinish)
+    () = CCU_GetServiceCallback(CCU_RECV_CONFIG_FINISH);
     switch (index)
     {
     case READ_HOLDING_REGISTERS:
@@ -856,6 +863,7 @@ U32_T ET_CCU_UsartRecvData(void)
     if (g_ccu_com_fd == -1)
     {
         printf("接收数据失败\n");
+        return -1;
     }
     U8_T j;
     U32_T i, h;
@@ -1041,13 +1049,13 @@ U32_T ET_CCU_GetSysInfoData(pstDATA_SYS_INFO_T pSysData)
 
 U32_T ET_CCU_GetChargeData(U8_T gunID, pstDATA_CHARGER_INFO_T pGunData)
 {
-    if (gunID != 0 || gunID != 1 || pGunData == NULL)
+    if ( pGunData == NULL || (gunID < 0 || gunID > 1))
     {
         return -1;
     }
 
     pthread_mutex_lock(&g_ccuLock);
-    memcpy(pGunData, &g_gunData[gunID], sizeof(DATA_SYS_INFO_T));
+    memcpy(pGunData, &g_gunData[gunID], sizeof(DATA_CHARGER_INFO_T));
     pthread_mutex_unlock(&g_ccuLock); // 解锁
 }
 

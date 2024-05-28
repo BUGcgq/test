@@ -59,7 +59,7 @@ extern "C"
 
 typedef struct DATA_SYS_INFO_T
 {
-    U8_T version;            // 充电桩内部通信协议版本
+    U16_T version;            // 充电桩内部通信协议版本
     U16_T ccuSwVer;       // CCU监控软件主版本号
     U16_T tcuHwVer;       // CCU监控硬件主版本号
     F32_T caseTemp; // 充电桩环境温度

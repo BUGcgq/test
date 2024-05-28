@@ -17,6 +17,7 @@ U32_T lastSendTime = 0;
 static bool waitingForResponse = false;
 static U8_T g_SnedMsgCnt = 0;
 static U8_T g_ChargeState[2] = {0};
+static U8_T g_rectNum = 6;
 
 static void CCU_sendTelemetryStateMachine()
 {
@@ -120,7 +121,7 @@ int RecvConfigReqHandler()
     Config.chrConfig.dcBusVoltB = 600.0;
 
     // 整流模块配置
-    Config.rectConfig.rectNum = 2;
+    Config.rectConfig.rectNum = 6;
     Config.rectConfig.rectPro = 1234;
     Config.rectConfig.rectRatedCurr = 100.0;
     Config.rectConfig.rectFailDelayTime = 500;
@@ -143,123 +144,99 @@ int ChargeStateHandler(U16_T gunID, U16_T chargeState)
     return 0;
 }
 
-// // 打印 DATA_GUN_INFO_T 的数据
-// void printGunInfo(const DATA_GUN_INFO_T *gunInfo)
-// {
-//     if (gunInfo == NULL)
-//     {
-//         printf("Invalid gunInfo pointer\n");
-//         return;
-//     }
-
-//     printf("Gun Information:\n");
-//     printf("  Charge State: %u\n", gunInfo->chgState);
-//     printf("  Gun Connection State: %u\n", gunInfo->gunConnState);
-//     printf("  Gun Lock State: %u\n", gunInfo->gunLockState);
-//     printf("  Gun Reset State: %u\n", gunInfo->gunResState);
-//     printf("  CCS1 Voltage: %u\n", gunInfo->ccs1Volt);
-//     printf("  Gun Temperature 1: %.2f\n", gunInfo->gunTemp1);
-//     printf("  Gun Temperature 2: %.2f\n", gunInfo->gunTemp2);
-//     printf("  Gun State 1: %u\n", gunInfo->gunState1);
-//     printf("  Gun State 2: %u\n", gunInfo->gunState2);
-//     printf("  Gun State 3: %u\n", gunInfo->gunState3);
-//     printf("  Gun Max Rate: %u\n", gunInfo->gunMaxRate);
-//     printf("  Gun Max Current: %u\n", gunInfo->gunMaxCurr);
-//     printf("  Gun Start Fail Reason: %u\n", gunInfo->gunStarFailReson);
-//     printf("  Gun Stop Reason: %llu\n", gunInfo->gunstopReson);
-//     printf("  Meter Voltage: %.2f\n", gunInfo->meterVolt);
-//     printf("  Meter Current: %.2f\n", gunInfo->meterCurr);
-//     printf("  Meter Read: %.2f\n", gunInfo->meterRead);
-//     printf("  Bus Positive to Ground Voltage: %u\n", gunInfo->busPosToGroundVolt);
-//     printf("  Bus Negative to Ground Voltage: %u\n", gunInfo->busNegToGroundVolt);
-//     printf("  Bus Positive to Ground Resistance: %u\n", gunInfo->busPosToGroundRes);
-//     printf("  Bus Negative to Ground Resistance: %u\n", gunInfo->busNegToGroundRes);
-//     printf("  Bus Output Voltage Side A: %u\n", gunInfo->busOutVoltSideA);
-//     printf("  Bus Output Current Side A: %u\n", gunInfo->busOutCuSideA);
-//     printf("  Bus Output Voltage Side B: %u\n", gunInfo->busOutVoltSideB);
-//     printf("  Bus Output Current Side B: %u\n", gunInfo->busOutCuSideB);
-// }
-
-// // 打印 DATA_BMS_INFO_T 的数据
-// void printBmsInfo(const DATA_BMS_INFO_T *bmsInfo)
-// {
-//     if (bmsInfo == NULL)
-//     {
-//         printf("Invalid bmsInfo pointer\n");
-//         return;
-//     }
-
-//     printf("BMS Information:\n");
-//     printf("  Cell Max Allowed Charge Voltage: %.2f\n", bmsInfo->cellmaxlAlwChgVolt);
-//     printf("  Max Allowed Charge Current: %.2f\n", bmsInfo->maxAlwChgCurr);
-//     printf("  Nominal Total Energy: %.2f\n", bmsInfo->nominalTotalElect);
-//     printf("  Max Allowed Charge Voltage: %.2f\n", bmsInfo->maxAlwChgVolt);
-//     printf("  Max Allowed Temperature: %d\n", bmsInfo->maxAlwTemp);
-//     printf("  Battery Electrical SOC: %u\n", bmsInfo->batEleSOC);
-//     printf("  BMS Flag: %u\n", bmsInfo->bmsFlag);
-//     printf("  Battery Need Voltage: %.2f\n", bmsInfo->batNeedVolt);
-//     printf("  Battery Need Current: %.2f\n", bmsInfo->battNeedCurr);
-//     printf("  Charge Mode: %u\n", bmsInfo->chgMode);
-//     printf("  Charge Voltage: %.2f\n", bmsInfo->chgVolt);
-//     printf("  Charge Current: %.2f\n", bmsInfo->chgCurr);
-//     printf("  Cell Max Charge Voltage: %.2f\n", bmsInfo->cellMaxChgVolt);
-//     printf("  Cell Max Voltage Group Number: %.2f\n", bmsInfo->cellMaxVoltGroupNum);
-//     printf("  Battery SOC: %u\n", bmsInfo->batSoc);
-//     printf("  Remaining Charge Time: %u\n", bmsInfo->remainChgTime);
-//     printf("  Cell Max Voltage ID: %u\n", bmsInfo->cellMaxVoltID);
-//     printf("  Battery Max Temperature: %d\n", bmsInfo->batMaxTemp);
-//     printf("  Max Temperature ID: %u\n", bmsInfo->maxTempID);
-//     printf("  Battery Min Temperature: %d\n", bmsInfo->batMinTemp);
-//     printf("  Min Temperature ID: %u\n", bmsInfo->minTempID);
-//     printf("  Battery State: %u\n", bmsInfo->batState);
-//     printf("  Battery End SOC: %u\n", bmsInfo->batEndSoc);
-//     printf("  Cell End Min Voltage: %.2f\n", bmsInfo->cellEndMinVolt);
-//     printf("  Cell End Max Voltage: %.2f\n", bmsInfo->cellEndMaxVolt);
-//     printf("  Battery End Min Temperature: %d\n", bmsInfo->batEndMinTemp);
-//     printf("  Battery End Max Temperature: %d\n", bmsInfo->batEndMaxTemp);
-//     printf("  VIN: %.17s\n", bmsInfo->vin); // Adjust format for VIN length
-// }
-
-// // 打印 DATA_CHARGER_INFO_T 数组中的数据
-// void printChargerInfoArray(const DATA_CHARGER_INFO_T *chargerInfoArray, size_t size)
-// {
-//     if (chargerInfoArray == NULL)
-//     {
-//         printf("Invalid chargerInfoArray pointer\n");
-//         return;
-//     }
-
-//     for (size_t i = 0; i < size; ++i)
-//     {
-//         printf("Charger Info #%zu:\n", i + 1);
-//         printGunInfo(&chargerInfoArray[i].gunData);
-//         printBmsInfo(&chargerInfoArray[i].bmsData);
-//         printf("\n");
-//     }
-// }
-
 static int CCU_DataSync()
 {
-    int i;
-    DATA_SYS_INFO_T SysData;
-    DATA_CHARGER_INFO_T GunData[2];
-    DATA_RECT_INFO_T RectData[6];
+    // int i;
 
-    memset(&SysData, 0, sizeof(SysData));
-    memset(GunData, 0, sizeof(GunData));
-    memset(RectData, 0, sizeof(RectData));
+    // DATA_SYS_INFO_T SysData;
+    // memset(&SysData, 0, sizeof(DATA_SYS_INFO_T));
+    // ET_CCU_GetSysInfoData(&SysData);
+    // printf("系统数据:\n");
+    // printf("  充电桩内部通信协议版本: %X\n", SysData.version);
+    // printf("  CCU监控软件主版本号: %X\n", SysData.ccuSwVer);
+    // printf("  CCU监控硬件主版本号: %X\n", SysData.tcuHwVer);
+    // printf("  充电桩环境温度: %.2f°C\n", SysData.caseTemp);
+    // printf("  CCU控制器DI状态: %X\n", SysData.diStatus);
 
-    ET_CCU_GetSysInfoData(&SysData);
+    // DATA_CHARGER_INFO_T GunData[2];
+    // memset(GunData, 0, sizeof(GunData));
+    // for (i = 0; i < 2; i++)
+    // {
+    //     ET_CCU_GetChargeData(i, &GunData[i]);
+    //     printf("  枪%d数据 :\n", i);
+    //     printf("  充电机状态: %u\n", GunData[i].gunData.chgState);
+    //     printf("  充电枪连接状态: %u\n", GunData[i].gunData.gunConnState);
+    //     printf("  充电枪锁状态: %u\n", GunData[i].gunData.gunLockState);
+    //     printf("  充电枪归位状态: %u\n", GunData[i].gunData.gunResState);
+    //     printf("  CCS1电压: %u\n", GunData[i].gunData.ccs1Volt);
+    //     printf("  枪温度1: %.2f\n", GunData[i].gunData.gunTemp1);
+    //     printf("  枪温度2: %.2f\n", GunData[i].gunData.gunTemp2);
+    //     printf("  枪状态STATE1: %u\n", GunData[i].gunData.gunState1);
+    //     printf("  枪状态STATE2: %u\n", GunData[i].gunData.gunState2);
+    //     printf("  枪状态STATE3: %u\n", GunData[i].gunData.gunState3);
+    //     printf("  枪最大功率: %u\n", GunData[i].gunData.gunMaxRate);
+    //     printf("  枪最大输出电流: %u\n", GunData[i].gunData.gunMaxCurr);
+    //     printf("  枪启动失败原因: %u\n", GunData[i].gunData.gunStarFailReson);
+    //     printf("  枪停机原因: %llu\n", GunData[i].gunData.gunstopReson);
+    //     printf("  电表测量电压值: %.2f\n", GunData[i].gunData.meterVolt);
+    //     printf("  电表测量电流值: %.2f\n", GunData[i].gunData.meterCurr);
+    //     printf("  电表当前读数: %.2f\n", GunData[i].gunData.meterRead);
+    //     printf("  枪母线正对地电压: %u\n", GunData[i].gunData.busPosToGroundVolt);
+    //     printf("  枪母线负对地电压: %u\n", GunData[i].gunData.busNegToGroundVolt);
+    //     printf("  枪母线正对地电阻: %u\n", GunData[i].gunData.busPosToGroundRes);
+    //     printf("  枪母线负对地电阻: %u\n", GunData[i].gunData.busNegToGroundRes);
+    //     printf("  母线输出电压A侧: %u\n", GunData[i].gunData.busOutVoltSideA);
+    //     printf("  母线输出电流A侧: %u\n", GunData[i].gunData.busOutCuSideA);
+    //     printf("  母线输出电压B侧: %u\n", GunData[i].gunData.busOutVoltSideB);
+    //     printf("  母线输出电流B侧: %u\n", GunData[i].gunData.busOutCuSideB);
 
-    for (i = 0; i < 2; i++)
-    {
-        ET_CCU_GetChargeData(i, &GunData[i]);
-    }
+    //     if (g_ChargeState[i] == 1)
+    //     {
+    //         printf("  单体动力蓄电池最高允许充电电压: %.2f\n", GunData[i].bmsData.cellmaxlAlwChgVolt);
+    //         printf("  最高允许充电电流: %.2f\n", GunData[i].bmsData.maxAlwChgCurr);
+    //         printf("  动力蓄电池标称总能量: %.2f\n", GunData[i].bmsData.nominalTotalElect);
+    //         printf("  最高允许充电总电压: %.2f\n", GunData[i].bmsData.maxAlwChgVolt);
+    //         printf("  最高允许动力蓄电池温度: %d\n", GunData[i].bmsData.maxAlwTemp);
+    //         printf("  整车动力蓄电池荷电状态: %u\n", GunData[i].bmsData.batEleSOC);
+    //         printf("  接收bms报文标志: %u\n", GunData[i].bmsData.bmsFlag);
+    //         printf("  电压需求: %.2f\n", GunData[i].bmsData.batNeedVolt);
+    //         printf("  电流需求: %.2f\n", GunData[i].bmsData.battNeedCurr);
+    //         printf("  充电模式: %u\n", GunData[i].bmsData.chgMode);
+    //         printf("  充电电压测量值: %.2f\n", GunData[i].bmsData.chgVolt);
+    //         printf("  充电电流测量值: %.2f\n", GunData[i].bmsData.chgCurr);
+    //         printf("  最高单体动力蓄电池电压: %.2f\n", GunData[i].bmsData.cellMaxChgVolt);
+    //         printf("  最高单体动力蓄电池电压所在组号: %.2f\n", GunData[i].bmsData.cellMaxVoltGroupNum);
+    //         printf("  Battery SOC: %u\n", GunData[i].bmsData.batSoc);
+    //         printf("  估算剩余充电时间: %u\n", GunData[i].bmsData.remainChgTime);
+    //         printf("  最高单体动力蓄电池电压所在编号: %u\n", GunData[i].bmsData.cellMaxVoltID);
+    //         printf("  最高动力蓄电池温度: %d\n", GunData[i].bmsData.batMaxTemp);
+    //         printf("  最高温度检测点编号: %u\n", GunData[i].bmsData.maxTempID);
+    //         printf("  最低动力蓄电池温度: %d\n", GunData[i].bmsData.batMinTemp);
+    //         printf("  最低温度检测点编号: %u\n", GunData[i].bmsData.minTempID);
+    //         printf("  电池状态: %u\n", GunData[i].bmsData.batState);
+    //         printf("  Battery End SOC: %u\n", GunData[i].bmsData.batEndSoc);
+    //         printf("  动力蓄电池单体最低电压: %.2f\n", GunData[i].bmsData.cellEndMinVolt);
+    //         printf("  动力蓄电池单体最高电压: %.2f\n", GunData[i].bmsData.cellEndMaxVolt);
+    //         printf("  动力蓄电池最低温度: %d\n", GunData[i].bmsData.batEndMinTemp);
+    //         printf("  动力蓄电池最高温度: %d\n", GunData[i].bmsData.batEndMaxTemp);
+    //         printf("  VIN: %.17s\n", GunData[i].bmsData.vin); // Adjust format for VIN length
+    //     }
+    // }
 
-    for (i = 0; i < 6; i++)
-    {
-        ET_CCU_GetRectModuleData(i, &RectData[i]);
-    }
+    // DATA_RECT_INFO_T RectData[6];
+    // memset(RectData, 0, sizeof(RectData));
+    // for (i = 0; i < g_rectNum; i++)
+    // {
+    //     ET_CCU_GetRectModuleData(i, &RectData[i]);
+    //     printf(" 模块%d数据\n", i + 1);
+    //     printf("    通信状态: %u\n", RectData[i].commState);
+    //     printf("    模块状态: %u\n", RectData[i].rectState);
+    //     printf("    模块输出电压: %.1f V\n", RectData[i].rectOutVolt);
+    //     printf("    模块输出电流: %.1f A\n", RectData[i].rectOutCurr);
+    //     printf("    限流点: %.1f\n", RectData[i].rectLimitPoint);
+    //     printf("    温度: %.1f °C\n", RectData[i].rectTemp);
+    //     printf("    输出功率: %.1f W\n", RectData[i].rectOutPower);
+    // }
 
     return 0;
 }
@@ -278,36 +255,79 @@ void main(void)
     ET_CCU_RegisterCallback(CCU_RECV_CHARGE_STATE, ChargeStateHandler);
 
     ET_CCU_CommInit(&serPort);
-    ET_CCU_SetRectNum(2);
+    ET_CCU_SetRectNum(g_rectNum);
     U32_T sendTime = 0;
     U32_T recvTime = 0;
-    U32_T teleGun2DataTime = 0;
-    U32_T teleRectModuleTime = 0;
+
     int i;
     while (1)
     {
 
         if (u32_inc_get_diff_time_ms(&sendTime) >= 2000)
         {
-            // ET_CCU_TelemetrySysInfo();
-            ET_CCU_TelemetryRectModuleData();
+            ET_CCU_TelemetryFreeGunData(0);
             sendTime = u32_inc_get_system_time_ms();
         }
         if (u32_inc_get_diff_time_ms(&recvTime) >= 2000)
         {
-            DATA_RECT_INFO_T RectData[2];
-            for (i = 0; i < 2; i++)
-            {
-                ET_CCU_GetRectModuleData(i, &RectData[i]);
-                printf("Rectifier Information %d:\n", i + 1);
-                printf(" Rectifier commState: %u\n", RectData[i].commState);
-                printf("  Rectifier rectState: %u\n", RectData[i].rectState);
-                printf("  Rectifier Output Voltage: %.2f V\n", RectData[i].rectOutVolt);
-                printf("  Rectifier Output Current: %.2f A\n", RectData[i].rectOutCurr);
-                printf("  Rectifier Limit Point: %.2f\n", RectData[i].rectLimitPoint);
-                printf("  Rectifier Temperature: %.2f °C\n", RectData[i].rectTemp);
-                printf("  Rectifier Output Power: %.2f W\n", RectData[i].rectOutPower);
-            }
+            DATA_CHARGER_INFO_T GunData;
+            memset(&GunData, 0, sizeof(GunData));
+            ET_CCU_GetChargeData(0, &GunData);
+            printf("枪1数据 :\n");
+            printf("  充电机状态: %u\n", GunData.gunData.chgState);
+            printf("  充电枪连接状态: %u\n", GunData.gunData.gunConnState);
+            printf("  充电枪锁状态: %u\n", GunData.gunData.gunLockState);
+            printf("  充电枪归位状态: %u\n", GunData.gunData.gunResState);
+            printf("  CCS1电压: %u\n", GunData.gunData.ccs1Volt);
+            printf("  枪温度1: %.2f\n", GunData.gunData.gunTemp1);
+            printf("  枪温度2: %.2f\n", GunData.gunData.gunTemp2);
+            printf("  枪状态STATE1: %u\n", GunData.gunData.gunState1);
+            printf("  枪状态STATE2: %u\n", GunData.gunData.gunState2);
+            printf("  枪状态STATE3: %u\n", GunData.gunData.gunState3);
+            printf("  枪最大功率: %u\n", GunData.gunData.gunMaxRate);
+            printf("  枪最大输出电流: %u\n", GunData.gunData.gunMaxCurr);
+            printf("  枪启动失败原因: %u\n", GunData.gunData.gunStarFailReson);
+            printf("  枪停机原因: %llu\n", GunData.gunData.gunstopReson);
+            printf("  电表测量电压值: %.2f\n", GunData.gunData.meterVolt);
+            printf("  电表测量电流值: %.2f\n", GunData.gunData.meterCurr);
+            printf("  电表当前读数: %.2f\n", GunData.gunData.meterRead);
+            printf("  枪母线正对地电压: %u\n", GunData.gunData.busPosToGroundVolt);
+            printf("  枪母线负对地电压: %u\n", GunData.gunData.busNegToGroundVolt);
+            printf("  枪母线正对地电阻: %u\n", GunData.gunData.busPosToGroundRes);
+            printf("  枪母线负对地电阻: %u\n", GunData.gunData.busNegToGroundRes);
+            printf("  母线输出电压A侧: %u\n", GunData.gunData.busOutVoltSideA);
+            printf("  母线输出电流A侧: %u\n", GunData.gunData.busOutCuSideA);
+            printf("  母线输出电压B侧: %u\n", GunData.gunData.busOutVoltSideB);
+            printf("  母线输出电流B侧: %u\n", GunData.gunData.busOutCuSideB);
+
+            // printf("  单体动力蓄电池最高允许充电电压: %.2f\n", GunData.bmsData.cellmaxlAlwChgVolt);
+            // printf("  最高允许充电电流: %.2f\n", GunData.bmsData.maxAlwChgCurr);
+            // printf("  动力蓄电池标称总能量: %.2f\n", GunData.bmsData.nominalTotalElect);
+            // printf("  最高允许充电总电压: %.2f\n", GunData.bmsData.maxAlwChgVolt);
+            // printf("  最高允许动力蓄电池温度: %d\n", GunData.bmsData.maxAlwTemp);
+            // printf("  整车动力蓄电池荷电状态: %u\n", GunData.bmsData.batEleSOC);
+            // printf("  接收bms报文标志: %u\n", GunData.bmsData.bmsFlag);
+            // printf("  电压需求: %.2f\n", GunData.bmsData.batNeedVolt);
+            // printf("  电流需求: %.2f\n", GunData.bmsData.battNeedCurr);
+            // printf("  充电模式: %u\n", GunData.bmsData.chgMode);
+            // printf("  充电电压测量值: %.2f\n", GunData.bmsData.chgVolt);
+            // printf("  充电电流测量值: %.2f\n", GunData.bmsData.chgCurr);
+            // printf("  最高单体动力蓄电池电压: %.2f\n", GunData.bmsData.cellMaxChgVolt);
+            // printf("  最高单体动力蓄电池电压所在组号: %.2f\n", GunData.bmsData.cellMaxVoltGroupNum);
+            // printf("  Battery SOC: %u\n", GunData.bmsData.batSoc);
+            // printf("  估算剩余充电时间: %u\n", GunData.bmsData.remainChgTime);
+            // printf("  最高单体动力蓄电池电压所在编号: %u\n", GunData.bmsData.cellMaxVoltID);
+            // printf("  最高动力蓄电池温度: %d\n", GunData.bmsData.batMaxTemp);
+            // printf("  最高温度检测点编号: %u\n", GunData.bmsData.maxTempID);
+            // printf("  最低动力蓄电池温度: %d\n", GunData.bmsData.batMinTemp);
+            // printf("  最低温度检测点编号: %u\n", GunData.bmsData.minTempID);
+            // printf("  电池状态: %u\n", GunData.bmsData.batState);
+            // printf("  Battery End SOC: %u\n", GunData.bmsData.batEndSoc);
+            // printf("  动力蓄电池单体最低电压: %.2f\n", GunData.bmsData.cellEndMinVolt);
+            // printf("  动力蓄电池单体最高电压: %.2f\n", GunData.bmsData.cellEndMaxVolt);
+            // printf("  动力蓄电池最低温度: %d\n", GunData.bmsData.batEndMinTemp);
+            // printf("  动力蓄电池最高温度: %d\n", GunData.bmsData.batEndMaxTemp);
+            // printf("  VIN: %.17s\n", GunData.bmsData.vin); // Adjust format for VIN length
 
             recvTime = u32_inc_get_system_time_ms();
         }
