@@ -72,7 +72,7 @@ typedef struct
     U16_T gunConnState;      // 充电枪连接状态
     U16_T gunLockState;      // 充电枪锁状态
     U16_T gunResState;       // 充电枪归位状态
-    U16_T ccs1Volt;         // CCS1电压
+    F32_T ccs1Volt;         // CCS1电压
     F32_T gunTemp1;           // 枪温度1
     F32_T gunTemp2;           // 枪温度2
     U16_T gunState1;        // 枪状态STATE1

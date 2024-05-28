@@ -419,7 +419,7 @@ static U32_T ET_CCU_ParseChargeData(U32_T n, U32_T gunID)
 
     // CCS1电压
     u16_temp_data = (g_rxBuf[offset + 8] << 8) | g_rxBuf[offset + 9];
-    data.gunData.ccs1Volt = u16_temp_data;
+    data.gunData.ccs1Volt = (F32_T)u16_temp_data / 100;
 
     // 枪温度1
     u16_temp_data = (g_rxBuf[offset + 10] << 8) | (g_rxBuf[offset + 11]);
