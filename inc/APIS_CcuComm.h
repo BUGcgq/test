@@ -10,7 +10,7 @@ extern "C"
 #include "Type.h"
 #include "IncComType.h"
 
-#define CCU_DEBUG_MSG                  1     //调试打印
+#define CCU_DEBUG_MSG                  1    //调试打印
 #define CCU_COM_RX_BUF_SIZE            512   //缓冲区大小
 #define CCU_COM_TX_BUF_SIZE            512    //缓冲区大小
 
@@ -50,11 +50,14 @@ extern "C"
 #define RECT_MODULE_CONFIG_START_ADDR        0x1025               //模块配置数据起始地址
 #define RECT_MODULE_CONFIG_DATA_LEN          0XB                  //模块桩配置数据长度
 
-#define CCU_CONFIG_START_ADDR                0x1000               //CCU配置数据起始地址
-#define CCU_CONFIG_DATA_LEN                  0X030                //CCU配置数据长度
+#define METER_CONFIG_START_ADDR              0x1033               //电表配置数据起始地址
+#define METER_CONFIG_DATA_LEN                0X15                  //电表配置数据长度
 
-#define GUN1_CHARGE_CMD_START_ADDR           0x1038               //枪1充电命令起始地址  
-#define GUN2_CHARGE_CMD_START_ADDR           0x1038               //枪2充电命令起始地址  
+#define CCU_CONFIG_START_ADDR                0x1000               //CCU配置数据起始地址
+#define CCU_CONFIG_DATA_LEN                  0X048                //CCU配置数据长度
+
+#define GUN1_CHARGE_CMD_START_ADDR           0x104B               //枪1充电命令起始地址  
+#define GUN2_CHARGE_CMD_START_ADDR           0x105C               //枪2充电命令起始地址  
 #define GUN_CHARGE_CMD_DATA_LEN              0x5                   //枪充电命令长度
 
 typedef struct DATA_SYS_INFO_T
@@ -78,21 +81,21 @@ typedef struct
     U16_T gunState1;        // 枪状态STATE1
     U16_T gunState2;        // 枪状态STATE2
     U16_T gunState3;        // 枪状态STATE3
-    U16_T gunMaxRate;       // 枪最大功率
-    U16_T gunMaxCurr;       // 枪最大输出电流
+    F32_T gunMaxRate;       // 枪最大功率
+    F32_T gunMaxCurr;       // 枪最大输出电流
     U32_T gunStarFailReson; // 枪启动失败原因
     U64_T gunstopReson;     // 枪停机原因
     F32_T meterVolt;        // 电表测量电压值
     F32_T meterCurr;        // 电表测量电流值
-    F32_T meterRead;          // 电表当前读数
-    U16_T busPosToGroundVolt; // 枪母线正对地电压
-    U16_T busNegToGroundVolt; // 枪母线负对地电压
-    U16_T busPosToGroundRes;  // 枪母线正对地电阻
-    U16_T busNegToGroundRes;  // 枪母线负对地电阻
-    U16_T busOutVoltSideA;    // 母线输出电压A侧
-    U16_T busOutCuSideA;      // 母线输出电流A侧
-    U16_T busOutVoltSideB;    // 母线输出电压B侧
-    U16_T busOutCuSideB;      // 母线输出电流B侧
+    F64_T meterRead;          // 电表当前读数
+    F32_T busPosToGroundVolt; // 枪母线正对地电压
+    F32_T busNegToGroundVolt; // 枪母线负对地电压
+    F32_T busPosToGroundRes;  // 枪母线正对地电阻
+    F32_T busNegToGroundRes;  // 枪母线负对地电阻
+    F32_T busOutVoltSideA;    // 母线输出电压A侧
+    F32_T busOutCuSideA;      // 母线输出电流A侧
+    F32_T busOutVoltSideB;    // 母线输出电压B侧
+    F32_T busOutCuSideB;      // 母线输出电流B侧
 } DATA_GUN_INFO_T;
 
 
@@ -111,7 +114,7 @@ typedef struct
     F32_T chgVolt;                      // 充电电压测量值，数据范围0~750V，精度0.1
     F32_T chgCurr;                      // 充电电流测量值，数据范围0~400A，精度0.1
     F32_T cellMaxChgVolt;               // 最高单体动力蓄电池电压，数据范围0~24V，精度0.01
-    F32_T cellMaxVoltGroupNum; // 最高单体动力蓄电池电压所在组号，范围1~16
+    U8_T cellMaxVoltGroupNum; // 最高单体动力蓄电池电压所在组号，范围1~16
     U8_T  batSoc;               // 当前荷电状态，数据范围0~100%
     U16_T remainChgTime;       // 估算剩余充电时间，数据范围0~600min
     U8_T  cellMaxVoltID; // 最高单体动力蓄电池电压所在编号，数据范围1~256
@@ -204,6 +207,19 @@ typedef struct CFG_RECT_MODULE_INFO_T
 } CFG_RECT_MODULE_INFO_T,*pstCFG_RECT_MODULE_INFO_T;
 
 
+typedef struct CFG_METER_INFO_T
+{
+    U16_T acMeterBaud;   // 交流电表波特率
+    U64_T acMeter1Addr; // 交流电表1地址
+    U64_T acMeter2Addr; // 交流电表2地址
+    U16_T acMeterCoe; // 交流电度表系数
+    U16_T dcMeterBaud;   // 直流电表波特率
+    U64_T dcMeter1Addr; // 直流电表1地址
+    U64_T dcMeter2Addr; // 直流电表2地址
+    U16_T dcMeterCoe; // 直流电度表系数
+    U16_T commInterrNum; //通信中断命令个数
+} CFG_METER_INFO_T,*pstCFG_METER_INFO_T;
+
 typedef struct CMD_CHARGE_INFO_T
 {
     U8_T assignPower;     //辅助电源控制
@@ -219,6 +235,7 @@ typedef struct CFG_CCU_INFO_T
     CFG_CONTROLLER_INFO_T ctrlConfig;     //控制器配置
     CFG_CHARGER_INFO_T chrConfig;       // 充电桩配置
     CFG_RECT_MODULE_INFO_T rectConfig;  //整流模块配置
+    CFG_METER_INFO_T meterConfig;//电表配置
 } CFG_CCU_INFO_T,*pstCFG_CCU_INFO_T;
 
 
