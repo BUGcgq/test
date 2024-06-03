@@ -10,8 +10,7 @@ static U16_T g_rectNum = 0;
 static DATA_RECT_INFO_T g_rectData[RECT_MODULE_MAX_NUM];
 static DATA_CHARGER_INFO_T g_gunData[2];
 static DATA_SYS_INFO_T g_sysData;
-static CFG_CONTROLLER_INFO_T g_conTroCfg;
-static U32_T lastSendAddr;
+static CFG_CCU_INFO_T g_ccuCfg;
 /* 串口发送和接收缓冲区定义 */
 U8_T g_rxBuf[CCU_COM_RX_BUF_SIZE];
 U16_T g_rxLen = 0;
@@ -27,13 +26,7 @@ static CCU_SERVICE_MAP_T g_ccuServiceMap[] =
         {CCU_RECV_ERROR, NULL},
         {CCU_RECV_CONFIG_FINISH, NULL},
         {CCU_RECV_MESSAGE, NULL},
-        {CCU_RECV_CONFIG_REQ, NULL},
-        {CCU_RECV_DI_STATE, NULL},
-        {CCU_RECV_CHARGE_STATE, NULL},
-        {CCU_RECV_GUN_STATE, NULL},
-        {CCU_RECV_RECT_FAULT, NULL},
-        {CCU_RECV_CCU_STATE1_FAULT, NULL},
-        {CCU_RECV_CCU_STATE2_FAULT, NULL}};
+        {CCU_RECV_CONFIG_REQ, NULL}};
 
 /**
  * *****************************************************************************
@@ -166,8 +159,6 @@ static U32_T ET_CCU_TelemetryDataCmd(U32_T fd, U32_T startAddr, U16_T dataLen)
     txBuf[7] = (U8_T)(u16_crc >> 8);
 
     U32_T ret = com_send_data(fd, txBuf, 8);
-
-    lastSendAddr = startAddr;
     pthread_mutex_unlock(&g_ccuLock); // 解锁
 
     if (ret > 0)
@@ -177,6 +168,51 @@ static U32_T ET_CCU_TelemetryDataCmd(U32_T fd, U32_T startAddr, U16_T dataLen)
 
     return ret;
 }
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-06-03
+ * 函 数 名：ET_CCU_ReadCcuConfigCmd
+ * 描    述: 发送读取CCU配置命令
+ *
+ * 返回类型：U32_T
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
+U32_T ET_CCU_ReadCcuConfigCmd()
+{
+    if (g_ccu_com_fd == -1)
+    {
+        return -1;
+    }
+
+    U16_T u16_crc;
+    U8_T txBuf[CCU_COM_TX_BUF_SIZE];
+    memset(txBuf, 0, CCU_COM_TX_BUF_SIZE);
+
+    U16_T startAddr = CCU_CONFIG_START_ADDR;
+    U16_T dataLen = CCU_CONFIG_DATA_LEN;
+
+    txBuf[0] = SLAVE_ADDRESS;          // 从机地址
+    txBuf[1] = READ_HOLDING_REGISTERS; // 操作方式
+    txBuf[2] = startAddr >> 8;
+    txBuf[3] = startAddr;
+    txBuf[4] = dataLen >> 8;
+    txBuf[5] = dataLen;
+    u16_crc = CCU_CalculateCrc(&(txBuf[0]), 6);
+    txBuf[6] = (U8_T)u16_crc;
+    txBuf[7] = (U8_T)(u16_crc >> 8);
+
+    U32_T ret = com_send_data(g_ccu_com_fd, txBuf, 8);
+    if (ret > 0)
+    {
+        CCU_PrintHexData("发送读取配置数据命令", txBuf, 8);
+    }
+
+    return ret;
+}
+
 /**
  * *****************************************************************************
  * 作    者: 陈贵全
@@ -325,44 +361,30 @@ static U32_T ET_CCU_ParseSysData(U32_T n)
 {
     U16_T u16_temp_data = 0;
     static U16_T u16_diState = 0;
-    U32_T(*fn_RecvDiState)
-    (U16_T) = CCU_GetServiceCallback(CCU_RECV_DI_STATE);
-    U32_T offset = n + 3;
+    U32_T offset = n + 5;
     DATA_SYS_INFO_T data;
     memset(&data, 0, sizeof(DATA_SYS_INFO_T));
 
     // 充电桩内部通信协议版本
-    u16_temp_data = (g_rxBuf[offset] << 8) | (g_rxBuf[offset + 1]);
-    data.version = u16_temp_data;
+    data.version = ((U16_T)g_rxBuf[offset] << 8) | ((U16_T)g_rxBuf[offset + 1]);
 
     // 整流模块输出电压
-    u16_temp_data = (g_rxBuf[offset + 2] << 8) | (g_rxBuf[offset + 3]);
-    data.ccuSwVer = u16_temp_data;
+    data.ccuSwVer = ((U16_T)g_rxBuf[offset + 2] << 8) | ((U16_T)g_rxBuf[offset + 3]);
 
     // 整流模块输出电流
-    u16_temp_data = (g_rxBuf[offset + 6] << 8) | (g_rxBuf[offset + 7]);
-    data.tcuHwVer = u16_temp_data;
+    data.tcuHwVer = ((U16_T)g_rxBuf[offset + 6] << 8) | ((U16_T)g_rxBuf[offset + 7]);
 
     // 充电桩环境温度
     u16_temp_data = (g_rxBuf[offset + 10] << 8) | (g_rxBuf[offset + 11]);
     data.caseTemp = (F32_T)u16_temp_data / 10;
 
     // CCU控制器DI状态
-    u16_temp_data = (g_rxBuf[offset + 12] << 8) | (g_rxBuf[offset + 13]);
-    data.diStatus = u16_temp_data;
+    data.diStatus = ((U16_T)g_rxBuf[offset + 12] << 8) | ((U16_T)g_rxBuf[offset + 13]);
 
     pthread_mutex_lock(&g_ccuLock);
     memcpy(&g_sysData, &data, sizeof(DATA_SYS_INFO_T));
     pthread_mutex_unlock(&g_ccuLock); // 解锁
-    if (u16_diState != data.diStatus)
-    {
-        u16_diState = data.diStatus;
 
-        if (fn_RecvDiState != NULL)
-        {
-            fn_RecvDiState(u16_diState);
-        }
-    }
     return 0;
 }
 
@@ -388,16 +410,7 @@ static U32_T ET_CCU_ParseChargeData(U32_T n, U32_T gunID)
     static U16_T u16_gunState = 0;
     static U16_T u16_chargeState = 0;
 
-    U32_T offset = n + 3;
-
-    U32_T(*fn_RecvChargeState)
-    (U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_CHARGE_STATE);
-    U32_T(*fn_RecvGunState)
-    (U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_GUN_STATE);
-    U32_T(*fn_RecvState1Fault)
-    (U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_CCU_STATE1_FAULT);
-    U32_T(*fn_RecvState2Fault)
-    (U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_CCU_STATE2_FAULT);
+    U32_T offset = n + 5;
 
     DATA_CHARGER_INFO_T data;
     memset(&data, 0, sizeof(DATA_CHARGER_INFO_T));
@@ -405,20 +418,16 @@ static U32_T ET_CCU_ParseChargeData(U32_T n, U32_T gunID)
     U32_T i;
 
     // 充电机状态
-    u16_temp_data = (g_rxBuf[offset] << 8) | (g_rxBuf[offset + 1]);
-    data.gunData.chgState = u16_temp_data;
+    data.gunData.chgState = (g_rxBuf[offset] << 8) | (g_rxBuf[offset + 1]);
 
     // 充电枪连接状态
-    u16_temp_data = (g_rxBuf[offset + 2] << 8) | (g_rxBuf[offset + 3]);
-    data.gunData.gunConnState = u16_temp_data;
+    data.gunData.gunConnState = (g_rxBuf[offset + 2] << 8) | (g_rxBuf[offset + 3]);
 
     // 充电枪锁状态
-    u16_temp_data = (g_rxBuf[offset + 4] << 8) | (g_rxBuf[offset + 5]);
-    data.gunData.gunLockState = u16_temp_data;
+    data.gunData.gunLockState = (g_rxBuf[offset + 4] << 8) | (g_rxBuf[offset + 5]);
 
     // 充电枪归位状态
-    u16_temp_data = (g_rxBuf[offset + 6] << 8) | (g_rxBuf[offset + 7]);
-    data.gunData.gunResState = u16_temp_data;
+    data.gunData.gunResState = (g_rxBuf[offset + 6] << 8) | (g_rxBuf[offset + 7]);
 
     // CCS1电压
     u16_temp_data = (g_rxBuf[offset + 8] << 8) | g_rxBuf[offset + 9];
@@ -433,15 +442,15 @@ static U32_T ET_CCU_ParseChargeData(U32_T n, U32_T gunID)
     data.gunData.gunTemp2 = (F32_T)(u16_temp_data) / 10 - 50;
 
     // 枪状态STATE1
-    u16_temp_data = (g_rxBuf[offset + 14] << 8) | (g_rxBuf[offset + 15]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 14] << 8) | ((U16_T)g_rxBuf[offset + 15]);
     data.gunData.gunState1 = u16_temp_data;
 
     // 枪状态STATE2
-    u16_temp_data = (g_rxBuf[offset + 16] << 8) | (g_rxBuf[offset + 17]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 16] << 8) | ((U16_T)g_rxBuf[offset + 17]);
     data.gunData.gunState2 = u16_temp_data;
 
     // 枪状态STATE3
-    u16_temp_data = (g_rxBuf[offset + 18] << 8) | (g_rxBuf[offset + 19]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 18] << 8) | ((U16_T)g_rxBuf[offset + 19]);
     data.gunData.gunState3 = u16_temp_data;
 
     // 枪最大功率
@@ -453,15 +462,15 @@ static U32_T ET_CCU_ParseChargeData(U32_T n, U32_T gunID)
     data.gunData.gunMaxCurr = (F32_T)(u16_temp_data) / 10;
 
     // 枪启动失败原因
-    u32_temp_data = (g_rxBuf[offset + 30] << 24) | (g_rxBuf[offset + 31] << 16) |
-                    (g_rxBuf[offset + 32] << 8) | (g_rxBuf[offset + 33]);
+    u32_temp_data = ((U32_T)g_rxBuf[offset + 30] << 24) | ((U32_T)g_rxBuf[offset + 31] << 16) |
+                    ((U32_T)g_rxBuf[offset + 32] << 8) | ((U32_T)g_rxBuf[offset + 33]);
     data.gunData.gunStarFailReson = (U32_T)u32_temp_data;
 
     // 枪停机原因
-    u64_temp_data = (g_rxBuf[offset + 34] << 56) | (g_rxBuf[offset + 35] << 48) |
-                    (g_rxBuf[offset + 36] << 40) | (g_rxBuf[offset + 37] << 32) |
-                    (g_rxBuf[offset + 38] << 24) | (g_rxBuf[offset + 39] << 16) |
-                    (g_rxBuf[offset + 40] << 8) | (g_rxBuf[offset + 41]);
+    u64_temp_data = ((U64_T)g_rxBuf[offset + 34] << 56) | ((U64_T)g_rxBuf[offset + 35] << 48) |
+                    ((U64_T)g_rxBuf[offset + 36] << 40) | ((U64_T)g_rxBuf[offset + 37] << 32) |
+                    ((U64_T)g_rxBuf[offset + 38] << 24) | ((U64_T)g_rxBuf[offset + 39] << 16) |
+                    ((U64_T)g_rxBuf[offset + 40] << 8) | ((U64_T)g_rxBuf[offset + 41]);
     data.gunData.gunstopReson = (U64_T)u64_temp_data;
 
     // 电表测量电压值
@@ -473,150 +482,150 @@ static U32_T ET_CCU_ParseChargeData(U32_T n, U32_T gunID)
     data.gunData.meterCurr = (F32_T)(u16_temp_data) / 10;
 
     // 电表当前读数
-    u64_temp_data = (g_rxBuf[offset + 46] << 56) | (g_rxBuf[offset + 47] << 48) |
-                    (g_rxBuf[offset + 48] << 40) | (g_rxBuf[offset + 49] << 32) |
-                    (g_rxBuf[offset + 50] << 24) | (g_rxBuf[offset + 51] << 16) |
-                    (g_rxBuf[offset + 52] << 8) | (g_rxBuf[offset + 53]);
+    u64_temp_data = ((U64_T)g_rxBuf[offset + 46] << 56) | ((U64_T)g_rxBuf[offset + 47] << 48) |
+                    ((U64_T)g_rxBuf[offset + 48] << 40) | ((U64_T)g_rxBuf[offset + 49] << 32) |
+                    ((U64_T)g_rxBuf[offset + 50] << 24) | ((U64_T)g_rxBuf[offset + 51] << 16) |
+                    ((U64_T)g_rxBuf[offset + 52] << 8) | ((U64_T)g_rxBuf[offset + 53]);
     data.gunData.meterRead = (F64_T)(u64_temp_data) / 1000;
 
     // 母线正极到地电压
-    u16_temp_data = (g_rxBuf[offset + 70] << 8) | (g_rxBuf[offset + 71]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 70] << 8) | ((U16_T)g_rxBuf[offset + 71]);
     data.gunData.busPosToGroundVolt = (F32_T)u16_temp_data / 10;
 
     // 母线负极到地电压
-    u16_temp_data = (g_rxBuf[offset + 72] << 8) | (g_rxBuf[offset + 73]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 72] << 8) | ((U16_T)g_rxBuf[offset + 73]);
     data.gunData.busNegToGroundVolt = (F32_T)u16_temp_data / 10;
 
     // 母线正极到地电阻
-    u16_temp_data = (g_rxBuf[offset + 74] << 8) | (g_rxBuf[offset + 75]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 74] << 8) | ((U16_T)g_rxBuf[offset + 75]);
     data.gunData.busPosToGroundRes = (F32_T)u16_temp_data / 10;
 
     // 母线负极到地电阻
-    u16_temp_data = (g_rxBuf[offset + 76] << 8) | (g_rxBuf[offset + 77]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 76] << 8) | ((U16_T)g_rxBuf[offset + 77]);
     data.gunData.busNegToGroundRes = (F32_T)u16_temp_data / 10;
 
     // 母线A相输出电压
-    u16_temp_data = (g_rxBuf[offset + 78] << 8) | (g_rxBuf[offset + 79]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 78] << 8) | ((U16_T)g_rxBuf[offset + 79]);
     data.gunData.busOutVoltSideA = (F32_T)u16_temp_data / 10;
 
     // 母线A相输出电流
-    u16_temp_data = (g_rxBuf[offset + 80] << 8) | (g_rxBuf[offset + 81]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 80] << 8) | ((U16_T)g_rxBuf[offset + 81]);
     data.gunData.busOutCuSideA = (F32_T)u16_temp_data / 10;
 
     // 母线B相输出电压
-    u16_temp_data = (g_rxBuf[offset + 82] << 8) | (g_rxBuf[offset + 83]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 82] << 8) | ((U16_T)g_rxBuf[offset + 83]);
     data.gunData.busOutVoltSideB = (F32_T)u16_temp_data / 10;
 
     // 母线B相输出电流
-    u16_temp_data = (g_rxBuf[offset + 84] << 8) | (g_rxBuf[offset + 85]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 84] << 8) | ((U16_T)g_rxBuf[offset + 85]);
     data.gunData.busOutCuSideB = (F32_T)u16_temp_data / 10;
 
     // 单体动力蓄电池最高允许充电电压
-    u16_temp_data = (g_rxBuf[offset + 94] << 8) | (g_rxBuf[offset + 95]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 94] << 8) | ((U16_T)g_rxBuf[offset + 95]);
     data.bmsData.cellmaxlAlwChgVolt = (F32_T)(u16_temp_data) / 100;
 
     // 最高允许充电电流
-    u16_temp_data = (g_rxBuf[offset + 96] << 8) | (g_rxBuf[offset + 97]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 96] << 8) | ((U16_T)g_rxBuf[offset + 97]);
     data.bmsData.maxAlwChgCurr = (F32_T)(u16_temp_data) / 10;
 
     // 动力蓄电池标称总能量
-    u16_temp_data = (g_rxBuf[offset + 98] << 8) | (g_rxBuf[offset + 99]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 98] << 8) | ((U16_T)g_rxBuf[offset + 99]);
     data.bmsData.nominalTotalElect = (F32_T)(u16_temp_data) / 10;
 
     // 最高允许充电总电压
-    u16_temp_data = (g_rxBuf[offset + 100] << 8) | (g_rxBuf[offset + 101]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 100] << 8) | ((U16_T)g_rxBuf[offset + 101]);
     data.bmsData.maxAlwChgVolt = (F32_T)(u16_temp_data) / 10;
 
     // 最高允许动力蓄电池温度
-    u16_temp_data = (g_rxBuf[offset + 102] << 8) | (g_rxBuf[offset + 103]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 102] << 8) | ((U16_T)g_rxBuf[offset + 103]);
     data.bmsData.maxAlwTemp = u16_temp_data - 5;
 
     // 整车动力蓄电池荷电状态
-    u16_temp_data = (g_rxBuf[offset + 104] << 8) | (g_rxBuf[offset + 105]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 104] << 8) | ((U16_T)g_rxBuf[offset + 105]);
     data.bmsData.batEleSOC = (F32_T)(u16_temp_data) / 10;
 
     // 接收bms报文标志
-    u16_temp_data = (g_rxBuf[offset + 106] << 8) | (g_rxBuf[offset + 107]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 106] << 8) | ((U16_T)g_rxBuf[offset + 107]);
     data.bmsData.bmsFlag = u16_temp_data;
 
     // 电压需求
-    u16_temp_data = (g_rxBuf[offset + 108] << 8) | (g_rxBuf[offset + 109]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 108] << 8) | ((U16_T)g_rxBuf[offset + 109]);
     data.bmsData.batNeedVolt = (F32_T)(u16_temp_data) / 10;
 
     // 电流需求
-    u16_temp_data = (g_rxBuf[offset + 110] << 8) | (g_rxBuf[offset + 111]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 110] << 8) | ((U16_T)g_rxBuf[offset + 111]);
     data.bmsData.battNeedCurr = (F32_T)(u16_temp_data) / 10;
 
     // 充电模式
-    u16_temp_data = (g_rxBuf[offset + 112] << 8) | (g_rxBuf[offset + 113]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 112] << 8) | ((U16_T)g_rxBuf[offset + 113]);
     data.bmsData.chgMode = u16_temp_data;
 
     // 充电电压测量值
-    u16_temp_data = (g_rxBuf[offset + 114] << 8) | (g_rxBuf[offset + 115]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 114] << 8) | ((U16_T)g_rxBuf[offset + 115]);
     data.bmsData.chgVolt = (F32_T)(u16_temp_data) / 10;
 
     // 充电电流测量值
-    u16_temp_data = (g_rxBuf[offset + 116] << 8) | (g_rxBuf[offset + 117]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 116] << 8) | ((U16_T)g_rxBuf[offset + 117]);
     data.bmsData.chgCurr = (F32_T)(u16_temp_data) / 10;
 
     // 最高单体动力蓄电池电压
-    u16_temp_data = (g_rxBuf[offset + 118] << 8) | (g_rxBuf[offset + 119]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 118] << 8) | ((U16_T)g_rxBuf[offset + 119]);
     data.bmsData.cellMaxChgVolt = (F32_T)(u16_temp_data) / 10;
 
     // 最高电压电池所在电池包序号
-    u16_temp_data = (g_rxBuf[offset + 120] << 8) | (g_rxBuf[offset + 121]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 120] << 8) | ((U16_T)g_rxBuf[offset + 121]);
     data.bmsData.cellMaxVoltGroupNum = u16_temp_data;
 
     // 电池荷电状态
-    u16_temp_data = (g_rxBuf[offset + 122] << 8) | (g_rxBuf[offset + 123]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 122] << 8) | ((U16_T)g_rxBuf[offset + 123]);
     data.bmsData.batSoc = u16_temp_data;
 
     // 剩余充电时间
-    u16_temp_data = (g_rxBuf[offset + 124] << 8) | (g_rxBuf[offset + 125]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 124] << 8) | ((U16_T)g_rxBuf[offset + 125]);
     data.bmsData.remainChgTime = u16_temp_data;
 
     // 最高单体动力蓄电池电压电池号
-    u16_temp_data = (g_rxBuf[offset + 126] << 8) | (g_rxBuf[offset + 127]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 126] << 8) | ((U16_T)g_rxBuf[offset + 127]);
     data.bmsData.cellMaxVoltID = u16_temp_data;
 
     // 整车动力蓄电池最高温度
-    u16_temp_data = (g_rxBuf[offset + 128] << 8) | (g_rxBuf[offset + 129]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 128] << 8) | ((U16_T)g_rxBuf[offset + 129]);
     data.bmsData.batMaxTemp = (F32_T)(u16_temp_data)-50;
 
     // 最高温度探针序号
-    u16_temp_data = (g_rxBuf[offset + 130] << 8) | (g_rxBuf[offset + 131]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 130] << 8) | ((U16_T)g_rxBuf[offset + 131]);
     data.bmsData.maxTempID = u16_temp_data;
 
     // 整车动力蓄电池最低温度
-    u16_temp_data = (g_rxBuf[offset + 132] << 8) | (g_rxBuf[offset + 133]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 132] << 8) | ((U16_T)g_rxBuf[offset + 133]);
     data.bmsData.batMinTemp = (F32_T)(u16_temp_data)-50;
 
     // 最低温度探针序号
-    u16_temp_data = (g_rxBuf[offset + 134] << 8) | (g_rxBuf[offset + 135]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 134] << 8) | ((U16_T)g_rxBuf[offset + 135]);
     data.bmsData.minTempID = u16_temp_data;
 
     // 电池状态
-    u16_temp_data = (g_rxBuf[offset + 136] << 8) | (g_rxBuf[offset + 137]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 136] << 8) | ((U16_T)g_rxBuf[offset + 137]);
     data.bmsData.batState = u16_temp_data;
 
     // 电池终止荷电状态
-    u16_temp_data = (g_rxBuf[offset + 138] << 8) | (g_rxBuf[offset + 139]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 138] << 8) | ((U16_T)g_rxBuf[offset + 139]);
     data.bmsData.batEndSoc = u16_temp_data;
 
     // 动力蓄电池单体电压终止允许充电最低值
-    u16_temp_data = (g_rxBuf[offset + 140] << 8) | (g_rxBuf[offset + 141]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 140] << 8) | ((U16_T)g_rxBuf[offset + 141]);
     data.bmsData.cellEndMinVolt = (F32_T)(u16_temp_data) / 100;
 
     // 动力蓄电池单体电压终止允许充电最高值
-    u16_temp_data = (g_rxBuf[offset + 142] << 8) | (g_rxBuf[offset + 143]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 142] << 8) | ((U16_T)g_rxBuf[offset + 143]);
     data.bmsData.cellEndMaxVolt = (F32_T)(u16_temp_data) / 100;
 
     // 电池终止最低温度
-    u16_temp_data = (g_rxBuf[offset + 144] << 8) | (g_rxBuf[offset + 145]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 144] << 8) | ((U16_T)g_rxBuf[offset + 145]);
     data.bmsData.batEndMinTemp = (F32_T)(u16_temp_data)-50;
 
     // 电池终止最高温度
-    u16_temp_data = (g_rxBuf[offset + 146] << 8) | (g_rxBuf[offset + 147]);
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 146] << 8) | ((U16_T)g_rxBuf[offset + 147]);
     data.bmsData.batEndMaxTemp = (F32_T)(u16_temp_data)-50;
 
     // 车辆识别码
@@ -628,42 +637,6 @@ static U32_T ET_CCU_ParseChargeData(U32_T n, U32_T gunID)
     pthread_mutex_lock(&g_ccuLock);
     memcpy(&g_gunData[gunID], &data, sizeof(DATA_CHARGER_INFO_T));
     pthread_mutex_unlock(&g_ccuLock); // 解锁
-
-    if (u16_chargeState != data.gunData.chgState)
-    {
-        u16_chargeState = data.gunData.chgState;
-
-        if (fn_RecvChargeState != NULL)
-        {
-            fn_RecvChargeState(gunID, u16_chargeState);
-        }
-    }
-
-    if (u16_gunState != data.gunData.gunConnState)
-    {
-        u16_gunState = data.gunData.gunConnState;
-
-        if (fn_RecvGunState != NULL)
-        {
-            fn_RecvGunState(gunID, u16_gunState);
-        }
-    }
-
-    if (data.gunData.gunState1 != 0)
-    {
-        if (fn_RecvState1Fault != NULL)
-        {
-            fn_RecvState1Fault(gunID, data.gunData.gunState1);
-        }
-    }
-
-    if (data.gunData.gunState2 != 0)
-    {
-        if (fn_RecvState2Fault != NULL)
-        {
-            fn_RecvState2Fault(gunID, data.gunData.gunState2);
-        }
-    }
 }
 /**
  * *****************************************************************************
@@ -682,44 +655,34 @@ static U32_T ET_CCU_ParseRectData(U32_T n)
 {
     U16_T u16_temp_data = 0;
     U32_T u32_temp_data = 0;
-    U32_T i, offset;
-    U32_T(*fn_RecvRectFault)
-    (U16_T, U16_T) = CCU_GetServiceCallback(CCU_RECV_RECT_FAULT);
+    U32_T i, offset = 0;
     pthread_mutex_lock(&g_ccuLock);
     for (i = 0; i < g_rectNum; i++)
     {
 
-        offset = i * TELEMETRY_RECT_DATA_LEN * 2 + 3;
+        offset = i * TELEMETRY_RECT_DATA_LEN * 2 + 5;
         // 整流模块通信状态定义
         u16_temp_data = (g_rxBuf[offset] << 8) | (g_rxBuf[offset + 1]);
         g_rectData[i].commState = u16_temp_data;
         // 整流模块状态定义
-        u32_temp_data = (g_rxBuf[offset + 2] << 24) | (g_rxBuf[offset + 3] << 16) |
-                        (g_rxBuf[offset + 4] << 8) | (g_rxBuf[offset + 5]);
+        u32_temp_data = ((U32_T)g_rxBuf[offset + 2] << 24) | ((U32_T)g_rxBuf[offset + 3] << 16) |
+                        ((U32_T)g_rxBuf[offset + 4] << 8) | ((U32_T)g_rxBuf[offset + 5]);
         g_rectData[i].rectState = u32_temp_data;
         // 整流模块输出电压
-        u16_temp_data = (g_rxBuf[offset + 6] << 8) | (g_rxBuf[offset + 7]);
+        u16_temp_data = ((U16_T)g_rxBuf[offset + 6] << 8) | ((U16_T)g_rxBuf[offset + 7]);
         g_rectData[i].rectOutVolt = (F32_T)u16_temp_data / 10;
         // 整流模块输出电流
-        u16_temp_data = (g_rxBuf[offset + 8] << 8) | (g_rxBuf[offset + 9]);
+        u16_temp_data = ((U16_T)g_rxBuf[offset + 8] << 8) | ((U16_T)g_rxBuf[offset + 9]);
         g_rectData[i].rectOutCurr = (F32_T)u16_temp_data / 10;
         // 整流模块限流点
-        u16_temp_data = (g_rxBuf[offset + 10] << 8) | (g_rxBuf[offset + 11]);
+        u16_temp_data = ((U16_T)g_rxBuf[offset + 10] << 8) | ((U16_T)g_rxBuf[offset + 11]);
         g_rectData[i].rectLimitPoint = (F32_T)u16_temp_data / 10;
         // 整流模块温度
-        u16_temp_data = (g_rxBuf[offset + 12] << 8) | (g_rxBuf[offset + 13]);
+        u16_temp_data = ((U16_T)g_rxBuf[offset + 12] << 8) | ((U16_T)g_rxBuf[offset + 13]);
         g_rectData[i].rectTemp = (F32_T)u16_temp_data / 10;
         // 整流模块输出功率
-        u16_temp_data = (g_rxBuf[offset + 14] << 8) | (g_rxBuf[offset + 15]);
+        u16_temp_data = ((U16_T)g_rxBuf[offset + 14] << 8) | ((U16_T)g_rxBuf[offset + 15]);
         g_rectData[i].rectOutPower = (F32_T)u16_temp_data / 10;
-
-        if (g_rectData[i].rectState != 0)
-        {
-            if (fn_RecvRectFault != NULL)
-            {
-                fn_RecvRectFault(i, g_rectData[i].rectState);
-            }
-        }
     }
     pthread_mutex_unlock(&g_ccuLock); // 解锁
     return 0;
@@ -729,7 +692,7 @@ static U32_T ET_CCU_ParseRectData(U32_T n)
  * *****************************************************************************
  * 作    者: 陈贵全
  * 创建日期: 2024-04-26
- * 函 数 名：ET_CCU_ParseTelemetryData
+ * 函 数 名：CCU_ParseTelemetryData
  * 描    述: 解析遥测数据
  *
  * 参    数: n - [参数说明]
@@ -738,11 +701,12 @@ static U32_T ET_CCU_ParseRectData(U32_T n)
  * 修改记录: 无
  * *****************************************************************************
  */
-static U32_T ET_CCU_ParseTelemetryData(U32_T n)
+static U32_T CCU_ParseTelemetryData(U32_T n)
 {
     U32_T(*fn_RecvMsg)
     () = CCU_GetServiceCallback(CCU_RECV_MESSAGE);
-    switch (lastSendAddr)
+    U16_T sendAddr = ((U16_T)g_rxBuf[n + 2] << 8) | ((U16_T)g_rxBuf[n + 3]);
+    switch (sendAddr)
     {
     case TELEMETRY_SYS_DATA_START_ADDR:
         ET_CCU_ParseSysData(n);
@@ -764,6 +728,146 @@ static U32_T ET_CCU_ParseTelemetryData(U32_T n)
     {
         fn_RecvMsg();
     }
+}
+
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-04-26
+ * 函 数 名：CCU_ParseConfigData
+ * 描    述: 配置数据数据
+ *
+ * 参    数: n - [参数说明]
+ * 返回类型：int
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
+
+static U32_T CCU_ParseConfigData(U32_T n)
+{
+    U16_T u16_temp_data = 0;
+    U64_T u64_temp_data = 0;
+    U32_T offset = n + 5;
+    CFG_CCU_INFO_T cfg;
+    memset(&cfg, 0, sizeof(CFG_CCU_INFO_T));
+
+    // 充电桩内部通信协议版本
+    cfg.ctrlConfig.proVer = ((U16_T)g_rxBuf[offset] << 8) | ((U16_T)g_rxBuf[offset + 1]);
+    // 控制器调试
+    cfg.ctrlConfig.ctrlDebug = (g_rxBuf[offset + 2] << 8) | (g_rxBuf[offset + 3]);
+    // 充电机母线段数
+    cfg.ctrlConfig.chrBusNum = (g_rxBuf[offset + 4] << 8) | (g_rxBuf[offset + 5]);
+    // 有无并联接触器
+    cfg.ctrlConfig.haveParCont = (g_rxBuf[offset + 6] << 8) | (g_rxBuf[offset + 7]);
+    // 有无交流接触器
+    cfg.ctrlConfig.haveAcCont = (g_rxBuf[offset + 8] << 8) | (g_rxBuf[offset + 9]);
+    // 交流接触器状态采集
+    cfg.ctrlConfig.acContStat = (g_rxBuf[offset + 10] << 8) | (g_rxBuf[offset + 11]);
+    // 直流接触器状态采集
+    cfg.ctrlConfig.dcContStat = (g_rxBuf[offset + 12] << 8) | (g_rxBuf[offset + 13]);
+    // 并联接触器状态采集
+    cfg.ctrlConfig.parContStat = (g_rxBuf[offset + 14] << 8) | (g_rxBuf[offset + 15]);
+    // 待机锁枪
+    cfg.ctrlConfig.standbyLockGun = (g_rxBuf[offset + 16] << 8) | (g_rxBuf[offset + 17]);
+    // 充电枪归位检测
+    cfg.ctrlConfig.gunResDetect = (g_rxBuf[offset + 18] << 8) | (g_rxBuf[offset + 19]);
+    // 泄放回路故障
+    cfg.ctrlConfig.disChrFault = (g_rxBuf[offset + 20] << 8) | (g_rxBuf[offset + 21]);
+    // 输出不可控
+    cfg.ctrlConfig.outPutUnctrl = (g_rxBuf[offset + 22] << 8) | (g_rxBuf[offset + 23]);
+    // 充电系统散热类型
+    cfg.ctrlConfig.coolSysType = (g_rxBuf[offset + 24] << 8) | (g_rxBuf[offset + 25]);
+    // 散热系统开启方式
+    cfg.ctrlConfig.coolSysActivate = (g_rxBuf[offset + 26] << 8) | (g_rxBuf[offset + 27]);
+    // 充电枪锁状态类型
+    cfg.ctrlConfig.gunLockStatType = (g_rxBuf[offset + 28] << 8) | (g_rxBuf[offset + 29]);
+    // 充电枪电子锁控制
+    cfg.ctrlConfig.gunElecLockCtrl = (g_rxBuf[offset + 30] << 8) | (g_rxBuf[offset + 31]);
+
+    // 绝缘电桥投切延时
+    cfg.chrConfig.insBridDelay = (g_rxBuf[offset + 42] << 8) | (g_rxBuf[offset + 43]);
+    // 风机启动温度
+    cfg.chrConfig.fanStartTemp = ((U16_T)g_rxBuf[offset + 44] << 8) | ((U16_T)g_rxBuf[offset + 45]);
+    // 风机停机温度
+    cfg.chrConfig.fanStopTemp = ((U16_T)g_rxBuf[offset + 46] << 8) | ((U16_T)g_rxBuf[offset + 47]);
+    // 充电桩过温阀值
+    cfg.chrConfig.chrOverTempThr = ((U16_T)g_rxBuf[offset + 48] << 8) | ((U16_T)g_rxBuf[offset + 49]);
+    // 充电枪过温降流阀值
+    cfg.chrConfig.gunCurrDownThr = ((U16_T)g_rxBuf[offset + 50] << 8) | ((U16_T)g_rxBuf[offset + 51]);
+    // 充电枪过温停机阀值
+    cfg.chrConfig.gunShutDownThr = ((U16_T)g_rxBuf[offset + 52] << 8) | ((U16_T)g_rxBuf[offset + 53]);
+    // BMS通信超时系数
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 54] << 8) | ((U16_T)g_rxBuf[offset + 55]);
+    cfg.chrConfig.bmsTimeoutCof = (F32_T)(u16_temp_data / 10);
+    // 车内接触器粘连阀值
+    cfg.chrConfig.contAdhesionThr = ((U16_T)g_rxBuf[offset + 56] << 8) | ((U16_T)g_rxBuf[offset + 57]);
+    // 充电枪最大电流
+    cfg.chrConfig.gunMaxCurr = ((U16_T)g_rxBuf[offset + 58] << 8) | ((U16_T)g_rxBuf[offset + 59]);
+    // 一段输入侧直流母线电压
+    cfg.chrConfig.dcBusVoltA = ((U16_T)g_rxBuf[offset + 60] << 8) | ((U16_T)g_rxBuf[offset + 61]);
+    // 二段输入侧直流母线电压
+    cfg.chrConfig.dcBusVoltB = ((U16_T)g_rxBuf[offset + 62] << 8) | ((U16_T)g_rxBuf[offset + 63]);
+
+    // 整流模块数量
+    cfg.rectConfig.rectNum = (g_rxBuf[offset + 74] << 8) | (g_rxBuf[offset + 75]);
+    // 整流模块协议
+    cfg.rectConfig.rectPro = ((U16_T)g_rxBuf[offset + 76] << 8) | ((U16_T)g_rxBuf[offset + 77]);
+    // 整流模块额定电流
+    cfg.rectConfig.rectRatedCurr = ((U16_T)g_rxBuf[offset + 78] << 8) | ((U16_T)g_rxBuf[offset + 79]);
+    // 整流模块故障延时时间
+    cfg.rectConfig.rectFailDelayTime = ((U16_T)g_rxBuf[offset + 80] << 8) | ((U16_T)g_rxBuf[offset + 81]);
+    // 整流模块额定功率
+    u16_temp_data = ((U16_T)g_rxBuf[offset + 82] << 8) | ((U16_T)g_rxBuf[offset + 83]);
+    cfg.rectConfig.rectRatedPower = (F32_T)(u16_temp_data / 10);
+    // 整流模块通讯中断时间
+    cfg.rectConfig.rectCommBreakTime = ((U16_T)g_rxBuf[offset + 84] << 8) | ((U16_T)g_rxBuf[offset + 85]);
+    // 整流模块输出过压
+    cfg.rectConfig.rectOutputOverVolt = ((U16_T)g_rxBuf[offset + 86] << 8) | ((U16_T)g_rxBuf[offset + 87]);
+    // 整流模块输出电压最大值
+    cfg.rectConfig.rectOutputMaxVolt = ((U16_T)g_rxBuf[offset + 88] << 8) | ((U16_T)g_rxBuf[offset + 89]);
+    // 整流模块输出电压最小值
+    cfg.rectConfig.rectOutputMinVolt = ((U16_T)g_rxBuf[offset + 90] << 8) | ((U16_T)g_rxBuf[offset + 91]);
+    // 整流模块限流最大值
+    cfg.rectConfig.rectMaxLimitCurr = (g_rxBuf[offset + 92] << 8) | (g_rxBuf[offset + 93]);
+    // 整流模块限流最小值
+    cfg.rectConfig.rectMinLimitCurr = (g_rxBuf[offset + 94] << 8) | (g_rxBuf[offset + 95]);
+
+    // 交流电表波特率
+    cfg.meterConfig.acMeterBaud = ((U16_T)g_rxBuf[offset + 102] << 8) | ((U16_T)g_rxBuf[offset + 103]);
+    // 交流电表1地址
+    cfg.meterConfig.acMeter1Addr = ((U64_T)g_rxBuf[offset + 104] << 56) | ((U64_T)g_rxBuf[offset + 105] << 48) |
+                                   ((U64_T)g_rxBuf[offset + 106] << 40) | ((U64_T)g_rxBuf[offset + 107] << 32) |
+                                   ((U64_T)g_rxBuf[offset + 108] << 24) | ((U64_T)g_rxBuf[offset + 109] << 16) |
+                                   ((U64_T)g_rxBuf[offset + 110] << 8) | ((U64_T)g_rxBuf[offset + 111]);
+    // 交流电表2地址
+    cfg.meterConfig.acMeter2Addr = ((U64_T)g_rxBuf[offset + 112] << 56) | ((U64_T)g_rxBuf[offset + 113] << 48) |
+                                   ((U64_T)g_rxBuf[offset + 114] << 40) | ((U64_T)g_rxBuf[offset + 115] << 32) |
+                                   ((U64_T)g_rxBuf[offset + 116] << 24) | ((U64_T)g_rxBuf[offset + 117] << 16) |
+                                   ((U64_T)g_rxBuf[offset + 118] << 8) | ((U64_T)g_rxBuf[offset + 119]);
+    // 交流电度表系数
+    cfg.meterConfig.acMeterCoe = (g_rxBuf[offset + 120] << 8) | (g_rxBuf[offset + 121]);
+    // 直流电表波特率
+    cfg.meterConfig.dcMeterBaud = (g_rxBuf[offset + 122] << 8) | (g_rxBuf[offset + 123]);
+    // 直流电表1地址
+    cfg.meterConfig.dcMeter1Addr = ((U64_T)g_rxBuf[offset + 124] << 56) | ((U64_T)g_rxBuf[offset + 125] << 48) |
+                                   ((U64_T)g_rxBuf[offset + 126] << 40) | ((U64_T)g_rxBuf[offset + 127] << 32) |
+                                   ((U64_T)g_rxBuf[offset + 128] << 24) | ((U64_T)g_rxBuf[offset + 129] << 16) |
+                                   ((U64_T)g_rxBuf[offset + 130] << 8) | ((U64_T)g_rxBuf[offset + 131]);
+    // 直流电表2地址
+    cfg.meterConfig.dcMeter2Addr = ((U64_T)g_rxBuf[offset + 132] << 56) | ((U64_T)g_rxBuf[offset + 133] << 48) |
+                                   ((U64_T)g_rxBuf[offset + 134] << 40) | ((U64_T)g_rxBuf[offset + 135] << 32) |
+                                   ((U64_T)g_rxBuf[offset + 136] << 24) | ((U64_T)g_rxBuf[offset + 137] << 16) |
+                                   ((U64_T)g_rxBuf[offset + 138] << 8) | ((U64_T)g_rxBuf[offset + 139]);
+
+    // 直流电度表系数
+    cfg.meterConfig.dcMeterCoe = ((U16_T)g_rxBuf[offset + 140] << 8) | ((U16_T)g_rxBuf[offset + 141]);
+    // 通信中断命令个数
+    cfg.meterConfig.commInterrNum = ((U16_T)g_rxBuf[offset + 142] << 8) | ((U16_T)g_rxBuf[offset + 143]);
+
+    pthread_mutex_lock(&g_ccuLock);
+    memcpy(&g_ccuCfg, &cfg, sizeof(CFG_CCU_INFO_T));
+    pthread_mutex_unlock(&g_ccuLock); // 解锁
 }
 
 /**
@@ -818,9 +922,10 @@ static U32_T CCU_RecvCmdHandle(U32_T n)
     switch (index)
     {
     case READ_HOLDING_REGISTERS:
+        CCU_ParseConfigData(n);
         break;
     case READ_INPUT_REGISTERS:
-        ET_CCU_ParseTelemetryData(n);
+        CCU_ParseTelemetryData(n);
         break;
     case WRITE_HOLDING_REGISTER:
 
@@ -893,7 +998,7 @@ U32_T ET_CCU_UsartRecvData(void)
         if (g_rxBuf[h + 1] == READ_HOLDING_REGISTERS || g_rxBuf[h + 1] == READ_INPUT_REGISTERS)
         {
             // 获取数据长度
-            u16_byte_len = (g_rxBuf[h + 2]) + 5;
+            u16_byte_len = (g_rxBuf[h + 4]) + 7;
             // 接收长度过短
             if ((g_rxLen) < u16_byte_len) // 接收出错
             {
@@ -994,6 +1099,11 @@ U32_T ET_CCU_CommInit(CCU_CFG_T *config)
         return -1;
     }
 
+    memset(g_rectData, 0, sizeof(g_rectData));
+    memset(g_gunData, 0, sizeof(g_gunData));
+    memset(&g_sysData, 0, sizeof(g_sysData));
+    memset(&g_ccuCfg, 0, sizeof(g_ccuCfg));
+
     return 0;
 }
 
@@ -1086,6 +1196,33 @@ U32_T ET_CCU_GetRectModuleData(U8_T rectId, pstDATA_RECT_INFO_T pRectData)
 
     pthread_mutex_lock(&g_ccuLock);
     memcpy(pRectData, &g_rectData[rectId], sizeof(DATA_RECT_INFO_T));
+    pthread_mutex_unlock(&g_ccuLock); // 解锁
+
+    return 0;
+}
+
+/**
+ * *****************************************************************************
+ * 作    者: 陈贵全
+ * 创建日期: 2024-06-01
+ * 函 数 名：ET_CCU_GetCcuConfig
+ * 描    述: 获取ccu配置
+ *
+ * 参    数: pConfig - [参数说明]
+ * 返回类型：U32_T
+ * 特殊说明：无
+ * 修改记录: 无
+ * *****************************************************************************
+ */
+U32_T ET_CCU_GetCcuConfig(pstCFG_CCU_INFO_T pConfig)
+{
+    if (pConfig == NULL)
+    {
+        return -1;
+    }
+
+    pthread_mutex_lock(&g_ccuLock);
+    memcpy(pConfig, &g_ccuCfg, sizeof(CFG_CCU_INFO_T));
     pthread_mutex_unlock(&g_ccuLock); // 解锁
 
     return 0;
@@ -1233,15 +1370,12 @@ U32_T ET_CCU_SetChargerConfig(pstCFG_CHARGER_INFO_T pChrConfig)
     txBuf[20] = tempData;
     txBuf[21] = pChrConfig->contAdhesionThr >> 8;
     txBuf[22] = pChrConfig->contAdhesionThr;
-    tempData = pChrConfig->gunMaxCurr;
-    txBuf[23] = tempData >> 8;
-    txBuf[24] = tempData;
-    tempData = pChrConfig->dcBusVoltA;
-    txBuf[25] = tempData >> 8;
-    txBuf[26] = tempData;
-    tempData = pChrConfig->dcBusVoltB;
-    txBuf[27] = tempData >> 8;
-    txBuf[28] = tempData;
+    txBuf[23] = pChrConfig->gunMaxCurr >> 8;
+    txBuf[24] = pChrConfig->gunMaxCurr;
+    txBuf[25] = pChrConfig->dcBusVoltA >> 8;
+    txBuf[26] = pChrConfig->dcBusVoltA;
+    txBuf[27] = pChrConfig->dcBusVoltB >> 8;
+    txBuf[28] = pChrConfig->dcBusVoltB;
 
     u16_crc = CCU_CalculateCrc(&(txBuf[0]), 29);
     txBuf[29] = (U8_T)u16_crc;
@@ -1300,9 +1434,8 @@ U32_T ET_CCU_SetRectModConfig(pstCFG_RECT_MODULE_INFO_T pRectModConfig)
     txBuf[8] = pRectModConfig->rectNum;
     txBuf[9] = pRectModConfig->rectPro >> 8;
     txBuf[10] = pRectModConfig->rectPro;
-    tempData = pRectModConfig->rectRatedCurr;
-    txBuf[11] = tempData >> 8;
-    txBuf[12] = tempData;
+    txBuf[11] = pRectModConfig->rectRatedCurr >> 8;
+    txBuf[12] = pRectModConfig->rectRatedCurr;
     txBuf[13] = pRectModConfig->rectFailDelayTime >> 8;
     txBuf[14] = pRectModConfig->rectFailDelayTime;
     tempData = pRectModConfig->rectRatedPower * 10;
@@ -1310,15 +1443,12 @@ U32_T ET_CCU_SetRectModConfig(pstCFG_RECT_MODULE_INFO_T pRectModConfig)
     txBuf[16] = tempData;
     txBuf[17] = pRectModConfig->rectCommBreakTime >> 8;
     txBuf[18] = pRectModConfig->rectCommBreakTime;
-    tempData = pRectModConfig->rectOutputOverVolt;
-    txBuf[19] = tempData >> 8;
-    txBuf[20] = tempData;
-    tempData = pRectModConfig->rectOutputMaxVolt;
-    txBuf[21] = tempData >> 8;
-    txBuf[22] = tempData;
-    tempData = pRectModConfig->rectOutputMinVolt;
-    txBuf[23] = tempData >> 8;
-    txBuf[24] = tempData;
+    txBuf[19] = pRectModConfig->rectOutputOverVolt >> 8;
+    txBuf[20] = pRectModConfig->rectOutputOverVolt;
+    txBuf[21] = pRectModConfig->rectOutputMaxVolt >> 8;
+    txBuf[22] = pRectModConfig->rectOutputMaxVolt;
+    txBuf[23] = pRectModConfig->rectOutputMinVolt >> 8;
+    txBuf[24] = pRectModConfig->rectOutputMinVolt;
     txBuf[25] = pRectModConfig->rectMaxLimitCurr >> 8;
     txBuf[26] = pRectModConfig->rectMaxLimitCurr;
     txBuf[27] = pRectModConfig->rectMinLimitCurr >> 8;
@@ -1613,22 +1743,19 @@ U32_T ET_CCU_SetCcuConfig(pstCFG_CCU_INFO_T pConfig)
     txBuf[62] = tempData;
     txBuf[63] = pConfig->chrConfig.contAdhesionThr >> 8;
     txBuf[64] = pConfig->chrConfig.contAdhesionThr;
-    tempData = pConfig->chrConfig.gunMaxCurr;
-    txBuf[65] = tempData >> 8;
-    txBuf[66] = tempData;
-    tempData = pConfig->chrConfig.dcBusVoltA;
-    txBuf[67] = tempData >> 8;
-    txBuf[68] = tempData;
-    tempData = pConfig->chrConfig.dcBusVoltB;
-    txBuf[69] = tempData >> 8;
-    txBuf[70] = tempData;
+    txBuf[65] = pConfig->chrConfig.gunMaxCurr >> 8;
+    txBuf[66] = pConfig->chrConfig.gunMaxCurr;
+    txBuf[67] = pConfig->chrConfig.dcBusVoltA >> 8;
+    txBuf[68] = pConfig->chrConfig.dcBusVoltA;
+    txBuf[69] = pConfig->chrConfig.dcBusVoltB >> 8;
+    txBuf[70] = pConfig->chrConfig.dcBusVoltB;
+
     txBuf[81] = pConfig->rectConfig.rectNum >> 8;
     txBuf[82] = pConfig->rectConfig.rectNum;
     txBuf[83] = pConfig->rectConfig.rectPro >> 8;
     txBuf[84] = pConfig->rectConfig.rectPro;
-    tempData = pConfig->rectConfig.rectRatedCurr;
-    txBuf[85] = tempData >> 8;
-    txBuf[86] = tempData;
+    txBuf[85] = pConfig->rectConfig.rectRatedCurr >> 8;
+    txBuf[86] = pConfig->rectConfig.rectRatedCurr;
     txBuf[87] = pConfig->rectConfig.rectFailDelayTime >> 8;
     txBuf[88] = pConfig->rectConfig.rectFailDelayTime;
     tempData = pConfig->rectConfig.rectRatedPower * 10;
@@ -1636,19 +1763,17 @@ U32_T ET_CCU_SetCcuConfig(pstCFG_CCU_INFO_T pConfig)
     txBuf[90] = tempData;
     txBuf[91] = pConfig->rectConfig.rectCommBreakTime >> 8;
     txBuf[92] = pConfig->rectConfig.rectCommBreakTime;
-    tempData = pConfig->rectConfig.rectOutputOverVolt;
-    txBuf[93] = tempData >> 8;
-    txBuf[94] = tempData;
-    tempData = pConfig->rectConfig.rectOutputMaxVolt;
-    txBuf[95] = tempData >> 8;
-    txBuf[96] = tempData;
-    tempData = pConfig->rectConfig.rectOutputMinVolt;
-    txBuf[97] = tempData >> 8;
-    txBuf[98] = tempData;
+    txBuf[93] = pConfig->rectConfig.rectOutputOverVolt >> 8;
+    txBuf[94] = pConfig->rectConfig.rectOutputOverVolt;
+    txBuf[95] = pConfig->rectConfig.rectOutputMaxVolt >> 8;
+    txBuf[96] = pConfig->rectConfig.rectOutputMaxVolt;
+    txBuf[97] = pConfig->rectConfig.rectOutputMinVolt >> 8;
+    txBuf[98] = pConfig->rectConfig.rectOutputMinVolt;
     txBuf[99] = pConfig->rectConfig.rectMaxLimitCurr >> 8;
     txBuf[100] = pConfig->rectConfig.rectMaxLimitCurr;
     txBuf[101] = pConfig->rectConfig.rectMinLimitCurr >> 8;
     txBuf[102] = pConfig->rectConfig.rectMinLimitCurr;
+
     txBuf[109] = pConfig->meterConfig.acMeterBaud >> 8;
     txBuf[110] = pConfig->meterConfig.acMeterBaud;
     txBuf[111] = pConfig->meterConfig.acMeter1Addr >> 56;
@@ -1669,26 +1794,26 @@ U32_T ET_CCU_SetCcuConfig(pstCFG_CCU_INFO_T pConfig)
     txBuf[126] = pConfig->meterConfig.acMeter2Addr;
     txBuf[127] = pConfig->meterConfig.acMeterCoe >> 8;
     txBuf[128] = pConfig->meterConfig.acMeterCoe;
-    txBuf[129] = pConfig->meterConfig.acMeterBaud >> 8;
-    txBuf[130] = pConfig->meterConfig.acMeterBaud;
-    txBuf[131] = pConfig->meterConfig.acMeter1Addr >> 56;
-    txBuf[132] = pConfig->meterConfig.acMeter1Addr >> 48;
-    txBuf[133] = pConfig->meterConfig.acMeter1Addr >> 40;
-    txBuf[134] = pConfig->meterConfig.acMeter1Addr >> 32;
-    txBuf[135] = pConfig->meterConfig.acMeter1Addr >> 24;
-    txBuf[136] = pConfig->meterConfig.acMeter1Addr >> 16;
-    txBuf[137] = pConfig->meterConfig.acMeter1Addr >> 8;
-    txBuf[138] = pConfig->meterConfig.acMeter1Addr;
-    txBuf[139] = pConfig->meterConfig.acMeter2Addr >> 56;
-    txBuf[140] = pConfig->meterConfig.acMeter2Addr >> 48;
-    txBuf[141] = pConfig->meterConfig.acMeter2Addr >> 40;
-    txBuf[142] = pConfig->meterConfig.acMeter2Addr >> 32;
-    txBuf[143] = pConfig->meterConfig.acMeter2Addr >> 24;
-    txBuf[144] = pConfig->meterConfig.acMeter2Addr >> 16;
-    txBuf[145] = pConfig->meterConfig.acMeter2Addr >> 8;
-    txBuf[146] = pConfig->meterConfig.acMeter2Addr;
-    txBuf[147] = pConfig->meterConfig.acMeterCoe >> 8;
-    txBuf[148] = pConfig->meterConfig.acMeterCoe;
+    txBuf[129] = pConfig->meterConfig.dcMeterBaud >> 8;
+    txBuf[130] = pConfig->meterConfig.dcMeterBaud;
+    txBuf[131] = pConfig->meterConfig.dcMeter1Addr >> 56;
+    txBuf[132] = pConfig->meterConfig.dcMeter1Addr >> 48;
+    txBuf[133] = pConfig->meterConfig.dcMeter1Addr >> 40;
+    txBuf[134] = pConfig->meterConfig.dcMeter1Addr >> 32;
+    txBuf[135] = pConfig->meterConfig.dcMeter1Addr >> 24;
+    txBuf[136] = pConfig->meterConfig.dcMeter1Addr >> 16;
+    txBuf[137] = pConfig->meterConfig.dcMeter1Addr >> 8;
+    txBuf[138] = pConfig->meterConfig.dcMeter1Addr;
+    txBuf[139] = pConfig->meterConfig.dcMeter2Addr >> 56;
+    txBuf[140] = pConfig->meterConfig.dcMeter2Addr >> 48;
+    txBuf[141] = pConfig->meterConfig.dcMeter2Addr >> 40;
+    txBuf[142] = pConfig->meterConfig.dcMeter2Addr >> 32;
+    txBuf[143] = pConfig->meterConfig.dcMeter2Addr >> 24;
+    txBuf[144] = pConfig->meterConfig.dcMeter2Addr >> 16;
+    txBuf[145] = pConfig->meterConfig.dcMeter2Addr >> 8;
+    txBuf[146] = pConfig->meterConfig.dcMeter2Addr;
+    txBuf[147] = pConfig->meterConfig.dcMeterCoe >> 8;
+    txBuf[148] = pConfig->meterConfig.dcMeterCoe;
     txBuf[149] = pConfig->meterConfig.commInterrNum >> 8;
     txBuf[150] = pConfig->meterConfig.commInterrNum;
 

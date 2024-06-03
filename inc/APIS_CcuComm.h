@@ -10,7 +10,7 @@ extern "C"
 #include "Type.h"
 #include "IncComType.h"
 
-#define CCU_DEBUG_MSG                  1    //调试打印
+#define CCU_DEBUG_MSG                  0    //调试打印
 #define CCU_COM_RX_BUF_SIZE            512   //缓冲区大小
 #define CCU_COM_TX_BUF_SIZE            512    //缓冲区大小
 
@@ -72,9 +72,9 @@ typedef struct DATA_SYS_INFO_T
 typedef struct
 {
     U8_T chgState;          // 充电机状态
-    U16_T gunConnState;      // 充电枪连接状态
-    U16_T gunLockState;      // 充电枪锁状态
-    U16_T gunResState;       // 充电枪归位状态
+    U8_T gunConnState;      // 充电枪连接状态
+    U8_T gunLockState;      // 充电枪锁状态
+    U8_T gunResState;       // 充电枪归位状态
     F32_T ccs1Volt;         // CCS1电压
     F32_T gunTemp1;           // 枪温度1
     F32_T gunTemp2;           // 枪温度2
@@ -177,16 +177,16 @@ typedef struct CFG_CONTROLLER_INFO_T
 typedef struct CFG_CHARGER_INFO_T
 {
     U8_T insBridDelay;     //绝缘电桥投切延时
-    S16_T fanStartTemp;      //风机启动温度
-    S16_T fanStopTemp;       //风机停机温度
-    S16_T chrOverTempThr;    //充电桩过温阀值
-    S16_T gunCurrDownThr;    //充电枪过温降流阀值
-    S16_T gunShutDownThr;    //充电枪过温停机阀值
-    U8_T bmsTimeoutCof;      //BMS通信超时系数
-    U8_T contAdhesionThr;    //车内接触器粘连阀值
-    F32_T gunMaxCurr;        //充电枪最大电流
-    F32_T dcBusVoltA;       //一段输入侧直流母线电压
-    F32_T dcBusVoltB;       //二段输入侧直流母线电压
+    U16_T fanStartTemp;      //风机启动温度
+    U16_T fanStopTemp;       //风机停机温度
+    U16_T chrOverTempThr;    //充电桩过温阀值
+    U16_T gunCurrDownThr;    //充电枪过温降流阀值
+    U16_T gunShutDownThr;    //充电枪过温停机阀值
+    F32_T bmsTimeoutCof;      //BMS通信超时系数
+    U16_T contAdhesionThr;    //车内接触器粘连阀值
+    U16_T gunMaxCurr;        //充电枪最大电流
+    U16_T dcBusVoltA;       //一段输入侧直流母线电压
+    U16_T dcBusVoltB;       //二段输入侧直流母线电压
 } CFG_CHARGER_INFO_T, *pstCFG_CHARGER_INFO_T;
 
 
@@ -195,13 +195,13 @@ typedef struct CFG_RECT_MODULE_INFO_T
 {
     U8_T rectNum;   // 整流模块数量
     U16_T rectPro; // 整流模块协议
-    F32_T rectRatedCurr; // 整流模块额定电流
+    U16_T rectRatedCurr; // 整流模块额定电流
     U16_T rectFailDelayTime; // 整流模块故障延时时间
     F32_T rectRatedPower; // 整流模块额定功率
     U16_T rectCommBreakTime; // 整流模块通讯中断时间
-    F32_T rectOutputOverVolt; // 整流模块输出过压
-    F32_T rectOutputMaxVolt; // 整流模块输出电压最大值
-    F32_T rectOutputMinVolt; // 整流模块输出电压最小值
+    U16_T rectOutputOverVolt; // 整流模块输出过压
+    U16_T rectOutputMaxVolt; // 整流模块输出电压最大值
+    U16_T rectOutputMinVolt; // 整流模块输出电压最小值
     U8_T rectMaxLimitCurr; // 整流模块限流最大值
     U8_T rectMinLimitCurr; // 整流模块限流最小值
 } CFG_RECT_MODULE_INFO_T,*pstCFG_RECT_MODULE_INFO_T;
@@ -257,12 +257,6 @@ typedef enum
     CCU_RECV_CONFIG_FINISH = 0,      //配置成功
     CCU_RECV_MESSAGE,        //接收信息
     CCU_RECV_CONFIG_REQ,      //配置请求
-    CCU_RECV_DI_STATE,  //di状态发生改变
-    CCU_RECV_CHARGE_STATE,  //充电机状态发生改变
-    CCU_RECV_GUN_STATE, //枪状态发生改变
-    CCU_RECV_RECT_FAULT, //模块故障
-    CCU_RECV_CCU_STATE1_FAULT,  //State1故障
-    CCU_RECV_CCU_STATE2_FAULT //State2故障
 } CCU_SERVICE_TYPE_E;
 
 
@@ -292,6 +286,11 @@ U32_T ET_CCU_SetConTroConfig(pstCFG_CONTROLLER_INFO_T pCtrConfig);
 U32_T ET_CCU_SetChargerConfig(pstCFG_CHARGER_INFO_T pChrConfig);
 U32_T ET_CCU_SetRectModConfig(pstCFG_RECT_MODULE_INFO_T pRectModConfig);
 U32_T ET_CCU_SetCcuConfig(pstCFG_CCU_INFO_T pConfig);
+
+
+U32_T ET_CCU_ReadCcuConfigCmd();
+U32_T ET_CCU_GetCcuConfig(pstCFG_CCU_INFO_T pConfig);
+
 
 U32_T ET_CCU_SendChargeCmd(pstCMD_CHARGE_INFO_T pChrCmd, U32_T gunID);
 
