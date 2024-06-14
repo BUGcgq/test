@@ -24,44 +24,27 @@ extern "C"
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <stdarg.h>
-#define LOG_BUFFER_SIZE 1024 // 缓冲区大小
-#define ANSI_COLOR_RESET "\x1b[0m"
-#define ANSI_COLOR_RED "\x1b[31m"
-#define ANSI_COLOR_YELLOW "\x1b[33m"
-#define ANSI_COLOR_GREEN "\x1b[32m"
-#define ANSI_COLOR_WHITE "\x1b[37m"
+
+
+#define LOG_BUFFER_SIZE 1024                // 缓冲区大小
+#define LOG_FILE_MAX_SIZE 3 * 1024 * 1024   // 3MB
+#define LOG_FILE_DIR_PATH "/app/core/log"
+#define LOG_MAX_SAVE_DAYS 10  // 超最大保存天数要保留的个数
+#define LOG_MAX_DEL_FILES 5   // 最大保存天数
+#define WRITE_MSG_INTERVAL 10 // 写缓存区的时间间隔
 
 typedef enum
 {
     LOG_LEVEL_ZERO = 0,
-    LOG_LEVEL_ERROR ,
+    LOG_LEVEL_ERROR,
     LOG_LEVEL_WARNING,
     LOG_LEVEL_INFO,
     LOG_LEVEL_DEBUG,
     LOG_LEVEL_MAX
 } LogLevel;
 
-// 定义消息结构体
-struct logmsgbuf
-{
-    long mtype;
-    char mtext[LOG_BUFFER_SIZE];
-};
 
-typedef struct
-{
-    char log_dir[256];        // 日志目录
-    char zero_dir[256];        // can目录
-    int max_log_size;         // 单个日志文件的最大大小（字节）
-    int max_save_days;        // 最大保存天数
-    int extra_delete;         // 删除旧文件的个数
-    int max_msg_num;          // 最大消息队列数
-    int write_msg_interval;    // 写缓存区的时间间隔  
-    LogLevel log_level;       // 日志级别
-} LogConfig;
-
-void init_log_system(LogConfig *config);
-void close_log_system();
+void init_log_system();
 void set_log_level(LogLevel level);
 void log_message(LogLevel level, const char *file, const char *func, int line, const char *format, ...);
 
